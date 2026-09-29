@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14110f">
+<title>Scoundrel Tracker</title>
+<style>
+  :root {
+    --bg: #14110f;
+    --panel: #1f1a17;
+    --panel2: #2a2320;
+    --line: #3a302b;
+    --text: #efe6dc;
+    --muted: #9c8f84;
+    --red: #e0524a;
+    --black: #e9e4de;
+    --gold: #d9a441;
+    --green: #5bbf73;
+    --blue: #5b9bd5;
+    --card: #f6f1e7;
+    --card-ink: #1b1b1b;
+    --card-red: #c62828;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body { padding-bottom: env(safe-area-inset-bottom); }
+  button { font: inherit; color: inherit; cursor: pointer; border: none; }
+  button:disabled { cursor: not-allowed; opacity: .35; }
+  .app { max-width: 760px; margin: 0 auto; padding: 12px 14px 40px; }
+
+  header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  header h1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; font-size: 20px; letter-spacing: 3px; margin: 0; flex: 1; font-weight: 800; }
+  @media (max-width: 400px) { header h1 { font-size: 17px; letter-spacing: 1.5px; } .icon-btn { padding: 8px 10px; } }
+  header h1 small { font-size: 12px; letter-spacing: 1px; color: var(--muted); font-weight: 500; margin-left: 6px; }
+  .icon-btn { background: var(--panel2); border-radius: 10px; padding: 8px 12px; font-size: 15px; }
+
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 12px; }
+  .label { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); }
+
+  /* Health */
+  .hp-row { display: flex; align-items: baseline; gap: 10px; }
+  .hp-num { font-size: 34px; font-weight: 800; }
+  .hp-num span { font-size: 16px; color: var(--muted); font-weight: 500; }
+  .hp-bar { height: 12px; background: var(--panel2); border-radius: 99px; overflow: hidden; margin-top: 6px; }
+  .hp-fill { height: 100%; background: linear-gradient(90deg, #b3261e, var(--red)); transition: width .3s; }
+  .hp-fill.ok { background: linear-gradient(90deg, #3d8f55, var(--green)); }
+  .hp-fill.mid { background: linear-gradient(90deg, #b07a1f, var(--gold)); }
+
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 520px) { .stats { grid-template-columns: 1fr; } }
+
+  /* Weapon */
+  .weapon { display: flex; gap: 10px; align-items: center; margin-top: 6px; min-height: 60px; }
+  .weapon .none { color: var(--muted); font-style: italic; }
+  .slain { display: flex; flex-wrap: wrap; gap: 4px; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+  /* Mini cards */
+  .mini { display: inline-flex; align-items: center; justify-content: center; min-width: 36px; height: 48px; padding: 0 4px;
+    background: var(--card); color: var(--card-ink); border-radius: 6px; font-weight: 800; font-size: 15px; box-shadow: 0 1px 0 #0006; }
+  .mini.sm { min-width: 28px; height: 36px; font-size: 12px; }
+  .mini.red { color: var(--card-red); }
+
+  .dstats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; text-align: center; }
+  .dstats b { display: block; font-size: 20px; }
+  .dstats div { background: var(--panel2); border-radius: 10px; padding: 6px 2px; font-size: 11px; color: var(--muted); }
+
+  /* Room */
+  .room-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .room-head h2 { margin: 0; font-size: 18px; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { font-size: 11px; padding: 4px 8px; border-radius: 99px; background: var(--panel2); color: var(--muted); }
+  .chip.on { background: #3b2a12; color: var(--gold); }
+  .chip.warn { background: #3a1716; color: var(--red); }
+  .slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 14px 0; }
+  @media (max-width: 460px) { .slots { grid-template-columns: repeat(2, 1fr); } }
+  .slot { position: relative; aspect-ratio: 5 / 7; border-radius: 12px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; transition: transform .15s; }
+  .slot.empty { border: 2px dashed var(--line); background: transparent; color: var(--muted); }
+  .slot.empty:not(:disabled):hover { border-color: var(--gold); color: var(--gold); }
+  .slot.empty .plus { font-size: 34px; line-height: 1; }
+  .slot.card { background: var(--card); color: var(--card-ink); box-shadow: 0 4px 14px #0008; }
+  .slot.card:not(:disabled):active { transform: scale(.97); }
+  .slot.card.red { color: var(--card-red); }
+  .slot .corner { position: absolute; top: 6px; left: 8px; font-weight: 800; font-size: 15px; line-height: 1; text-align: center; }
+  .slot .big { font-size: 42px; line-height: 1; }
+  .slot .role { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #6b625a; margin-top: 4px; }
+  .slot .badge { position: absolute; bottom: 6px; left: 6px; right: 6px; border-radius: 8px; font-size: 13px; font-weight: 700;
+    padding: 3px 0; text-align: center; background: #0000000f; }
+  .badge.dmg { background: #fde2e0; color: #b3261e; }
+  .badge.heal { background: #dff3e4; color: #23733a; }
+  .badge.equip { background: #e0ecf8; color: #245d94; }
+  .badge.zero { background: #eee; color: #777; }
+  .slot.resolved { opacity: .38; filter: grayscale(.7); }
+  .slot.resolved::after { content: "✓"; position: absolute; top: 4px; right: 8px; font-size: 18px; color: #2e7d32; font-weight: 900; }
+  .slot.carried::before { content: "carried"; position: absolute; top: -9px; right: 8px; font-size: 10px; background: var(--gold);
+    color: #000; padding: 1px 6px; border-radius: 99px; font-weight: 700; }
+  .slot.disabled-slot { border-style: dotted; opacity: .3; }
+
+  .actions { display: flex; gap: 10px; }
+  .btn { flex: 1; padding: 14px 12px; border-radius: 12px; background: var(--panel2); font-weight: 700; font-size: 15px; }
+  .btn.primary { background: var(--gold); color: #1b1203; }
+  .btn.danger { background: #4a1b19; color: #ffb4ae; }
+  .guide { text-align: center; color: var(--muted); font-size: 13px; margin-top: 10px; min-height: 18px; }
+
+  details.panel summary { cursor: pointer; font-weight: 700; list-style: none; }
+  details.panel summary::before { content: "▸ "; color: var(--muted); }
+  details.panel[open] summary::before { content: "▾ "; }
+  .grid44 { display: grid; grid-template-columns: 28px repeat(13, 1fr); gap: 3px; margin-top: 10px; font-size: 12px; }
+  .grid44 .cell { text-align: center; padding: 5px 0; border-radius: 5px; background: var(--card); color: var(--card-ink); font-weight: 700; }
+  .grid44 .cell.red { color: var(--card-red); }
+  .grid44 .cell.used { background: transparent; color: #5a4f48; text-decoration: line-through; }
+  .grid44 .cell.inroom { outline: 2px solid var(--gold); }
+  .grid44 .cell.na { background: transparent; }
+  .grid44 .sh { text-align: center; padding: 5px 0; font-weight: 800; }
+  .log { max-height: 260px; overflow: auto; margin-top: 8px; font-size: 13px; }
+  .log div { padding: 5px 0; border-bottom: 1px solid var(--line); }
+  .log .r { color: var(--muted); display: inline-block; width: 38px; }
+  .log .dmg { color: #ff9a92; } .log .heal { color: #8fe0a4; } .log .equip { color: #9cc7f0; } .log .run { color: var(--gold); }
+
+  /* Sheets */
+  .backdrop { position: fixed; inset: 0; background: #000a; display: none; align-items: flex-end; justify-content: center; z-index: 10; }
+  .backdrop.show { display: flex; }
+  .sheet { background: var(--panel); width: 100%; max-width: 760px; border-radius: 18px 18px 0 0; padding: 16px 16px calc(18px + env(safe-area-inset-bottom));
+    border: 1px solid var(--line); max-height: 92vh; overflow: auto; animation: up .18s ease-out; }
+  .sheet.center { border-radius: 18px; margin: auto; max-width: 440px; }
+  @keyframes up { from { transform: translateY(30px); opacity: 0; } }
+  .sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 10px; }
+  .sheet-head h3 { margin: 0; font-size: 17px; }
+  .picker { display: grid; grid-template-columns: 1.2fr .8fr 1.6fr; gap: 12px; }
+  @media (max-width: 520px) { .picker { grid-template-columns: 1fr 1fr; } .picker .col-rank { grid-column: 1 / -1; } }
+  .col h4 { margin: 0 0 8px; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+  .col h4 .n { display: inline-block; width: 18px; height: 18px; line-height: 18px; text-align: center; border-radius: 50%; background: var(--panel2); margin-right: 4px; }
+  .col h4.done .n { background: var(--gold); color: #000; }
+  .opt { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 12px; margin-bottom: 8px;
+    background: var(--panel2); border-radius: 10px; border: 2px solid transparent; }
+  .opt .g { font-size: 26px; line-height: 1; width: 26px; text-align: center; }
+  .opt .g.red { color: var(--red); } .opt .g.blk { color: var(--black); }
+  .opt small { display: block; color: var(--muted); font-size: 11px; }
+  .opt.sel { border-color: var(--gold); background: #33271a; }
+  .swatch { width: 22px; height: 22px; border-radius: 6px; border: 2px solid #fff3; }
+  .ranks { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .rank { padding: 14px 0; border-radius: 10px; background: var(--card); color: var(--card-ink); font-weight: 800; font-size: 18px; }
+  .rank.red { color: var(--card-red); }
+  .rank:disabled { background: var(--panel2); color: #5a4f48; opacity: 1; text-decoration: line-through; }
+  .rank.cur { outline: 3px solid var(--gold); }
+  .pick-hint { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .act { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 14px 14px; margin-bottom: 8px;
+    border-radius: 12px; background: var(--panel2); font-weight: 600; text-align: left; }
+  .act .out { font-weight: 800; }
+  .act .out.dmg { color: #ff9a92; } .act .out.heal { color: #8fe0a4; } .act .out.zero { color: var(--muted); }
+  .act.rec { border: 2px solid var(--gold); }
+  .act small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+  .over { text-align: center; }
+  .over .big { font-size: 54px; }
+  .over .score { font-size: 42px; font-weight: 900; margin: 6px 0; }
+  .rules { font-size: 14px; line-height: 1.5; }
+  .rules h4 { margin: 12px 0 4px; color: var(--gold); }
+  .rules ul { margin: 0; padding-left: 20px; }
+  kbd { background: var(--panel2); border-radius: 4px; padding: 0 5px; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>SCOUNDREL<small id="roomLabel"></small></h1>
+    <button class="icon-btn" id="undoBtn" title="Undo (Ctrl+Z)">↶ Undo</button>
+    <button class="icon-btn" id="rulesBtn" title="Rules">?</button>
+    <button class="icon-btn" id="newBtn" title="New game">⟳</button>
+  </header>
+
+  <div class="stats">
+    <section class="panel">
+      <div class="label">❤ Health</div>
+      <div class="hp-row"><div class="hp-num" id="hp"></div></div>
+      <div class="hp-bar"><div class="hp-fill" id="hpFill"></div></div>
+    </section>
+    <section class="panel">
+      <div class="label">⚔ Weapon</div>
+      <div class="weapon" id="weapon"></div>
+      <div class="hint" id="weaponHint"></div>
+    </section>
+  </div>
+
+  <section class="panel">
+    <div class="label">🂠 Dungeon</div>
+    <div class="dstats" id="dstats"></div>
+  </section>
+
+  <section class="panel">
+    <div class="room-head">
+      <h2 id="roomTitle"></h2>
+      <div class="chips" id="chips"></div>
+    </div>
+    <div class="slots" id="slots"></div>
+    <div class="actions">
+      <button class="btn danger" id="runBtn">🏃 Run away</button>
+      <button class="btn primary" id="nextBtn">Next room →</button>
+    </div>
+    <div class="guide" id="guide"></div>
+  </section>
+
+  <details class="panel" id="deckDetails">
+    <summary>Dungeon cards <span class="label" id="deckSum"></span></summary>
+    <div class="grid44" id="grid44"></div>
+  </details>
+
+  <details class="panel" open>
+    <summary>Log</summary>
+    <div class="log" id="log"></div>
+  </details>
+</div>
+
+<div class="backdrop" id="backdrop"><div class="sheet" id="sheet"></div></div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------- Card model ----------
+  const SUITS = {
+    C: { name: 'Clubs',    glyph: '♣', color: 'black', role: 'monster' },
+    S: { name: 'Spades',   glyph: '♠', color: 'black', role: 'monster' },
+    H: { name: 'Hearts',   glyph: '♥', color: 'red',   role: 'potion'  },
+    D: { name: 'Diamonds', glyph: '♦', color: 'red',   role: 'weapon'  },
+  };
+  const SUIT_ORDER = ['C', 'S', 'H', 'D'];
+  const RANKS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+  const ROLE_LABEL = { monster: 'Monster', potion: 'Potion', weapon: 'Weapon' };
+  const MAX_HP = 20;
+  const ROOM_SIZE = 4;
+
+  const rankLabel = r => ({ 11: 'J', 12: 'Q', 13: 'K', 14: 'A' }[r] || String(r));
+  const inDungeon = (s, r) => SUITS[s].color === 'black' || r <= 10;
+  const ALL_CARDS = [];
+  SUIT_ORDER.forEach(s => RANKS.forEach(r => { if (inDungeon(s, r)) ALL_CARDS.push(s + r); }));
+  const TOTAL = ALL_CARDS.length; // 44
+
+  const parse = id => ({ id, suit: id[0], value: +id.slice(1) });
+  const suitOf = id => SUITS[id[0]];
+  const valueOf = id => +id.slice(1);
+  const roleOf = id => suitOf(id).role;
+  const isRed = id => suitOf(id).color === 'red';
+  const label = id => rankLabel(valueOf(id)) + suitOf(id).glyph;
+  const miniHTML = (id, sm) => `<span class="mini${sm ? ' sm' : ''}${isRed(id) ? ' red' : ''}">${label(id)}</span>`;
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  // ---------- State ----------
+  const KEY = 'scoundrel-tracker-v1';
+  const fresh = () => ({
+    hp: MAX_HP,
+    weapon: null,              // { card, slain: [] }
+    room: [null, null, null, null], // { card, resolved, carried, note }
+    resolvedInRoom: 0,
+    potionUsedInRoom: false,
+    ranLastRoom: false,
+    used: [],
+    roomNo: 1,
+    lastResolved: null,
+    stats: { slain: 0, dmg: 0, healed: 0, runs: 0 },
+    log: [],
+    over: null,
+  });
+  let state = fresh();
+  let history = [];
+
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify({ state, history: history.slice(-100) })); } catch (e) { /* ignore */ }
+  }
+  function load() {
+    try {
+      const d = JSON.parse(localStorage.getItem(KEY));
+      if (d && d.state && Array.isArray(d.state.room)) { state = d.state; history = d.history || []; }
+    } catch (e) { /* ignore */ }
+  }
+  function commit(fn) {
+    history.push(JSON.stringify(state));
+    if (history.length > 200) history.shift();
+    fn();
+    checkEnd();
+    save();
+    render();
+  }
+  function undo() {
+    if (!history.length) return;
+    state = JSON.parse(history.pop());
+    closeSheet();
+    save();
+    render();
+  }
+  const log = (text, kind = '') => state.log.push({ room: state.roomNo, text, kind });
+
+  // ---------- Derived ----------
+  const roomCards = () => state.room.filter(Boolean);
+  const unresolved = () => roomCards().filter(c => !c.resolved);
+  const inRoomIds = () => roomCards().map(c => c.card);
+  const dungeonLeft = () => TOTAL - state.used.length - unresolved().length;
+  const filledCount = () => roomCards().length;
+  // cards the room should hold when dealt (fewer at the end of the dungeon)
+  const slotsNeeded = () => state.resolvedInRoom > 0 ? filledCount() : Math.min(ROOM_SIZE, filledCount() + dungeonLeft());
+  const roomFull = () => filledCount() >= slotsNeeded() && filledCount() > 0;
+  const isAvailable = (id, except) => id === except || (!state.used.includes(id) && !inRoomIds().includes(id));
+
+  function weaponUsableOn(v) {
+    const w = state.weapon;
+    if (!w) return false;
+    if (!w.slain.length) return true;
+    return v < valueOf(w.slain[w.slain.length - 1]);
+  }
+  const weaponDamage = v => Math.max(0, v - valueOf(state.weapon.card));
+  const canRun = () => !state.over && roomFull() && filledCount() === ROOM_SIZE && state.resolvedInRoom === 0 && !state.ranLastRoom;
+  const roomDone = () => !state.over && state.resolvedInRoom >= 3 && unresolved().length > 0;
+  const canResolve = () => !state.over && roomFull() && state.resolvedInRoom < 3;
+
+  function remainingMonsterSum() {
+    return ALL_CARDS.filter(id => roleOf(id) === 'monster' && !state.used.includes(id))
+      .reduce((a, id) => a + valueOf(id), 0);
+  }
+
+  function checkEnd() {
+    if (state.over) return;
+    if (state.hp <= 0) {
+      const score = -remainingMonsterSum();
+      state.over = { won: false, score };
+      log(`☠ You died. Score ${score}`, 'dmg');
+    } else if (dungeonLeft() === 0 && unresolved().length === 0 && filledCount() > 0) {
+      let score = state.hp;
+      if (state.hp === MAX_HP && state.lastResolved && roleOf(state.lastResolved) === 'potion') score += valueOf(state.lastResolved);
+      state.over = { won: true, score };
+      log(`🏆 Escaped the dungeon! Score ${score}`, 'heal');
+    }
+  }
+
+  // ---------- Actions ----------
+  function setCard(slot, id) {
+    commit(() => {
+      const prev = state.room[slot];
+      state.room[slot] = { card: id, resolved: false, carried: prev ? prev.carried : false };
+    });
+  }
+  function removeCard(slot) {
+    commit(() => { state.room[slot] = null; });
+  }
+  function resolveCard(slot, how) {
+    commit(() => {
+      const c = state.room[slot];
+      const id = c.card, v = valueOf(id);
+      if (how === 'weapon') {
+        const dmg = weaponDamage(v);
+        state.hp -= dmg; state.stats.dmg += dmg; state.stats.slain++;
+        state.weapon.slain.push(id);
+        c.note = dmg ? `−${dmg}` : '0';
+        log(`Slew ${label(id)} with ${label(state.weapon.card)}: ${dmg ? '−' + dmg + ' HP' : 'no damage'} → ${state.hp}`, 'dmg');
+      } else if (how === 'bare') {
+        state.hp -= v; state.stats.dmg += v; state.stats.slain++;
+        c.note = `−${v}`;
+        log(`Fought ${label(id)} barehanded: −${v} HP → ${state.hp}`, 'dmg');
+      } else if (how === 'equip') {
+        if (state.weapon) {
+          log(`Discarded ${label(state.weapon.card)}${state.weapon.slain.length ? ' + ' + state.weapon.slain.length + ' slain' : ''}`);
+        }
+        state.weapon = { card: id, slain: [] };
+        c.note = 'equip';
+        log(`Equipped ${label(id)}`, 'equip');
+      } else if (how === 'drink') {
+        const gain = Math.min(v, MAX_HP - state.hp);
+        state.hp += gain; state.stats.healed += gain;
+        state.potionUsedInRoom = true;
+        c.note = `+${gain}`;
+        log(`Drank ${label(id)}: +${gain} HP → ${state.hp}`, 'heal');
+      } else if (how === 'discard') {
+        c.note = '✗';
+        log(`Discarded ${label(id)} (already drank a potion this room)`);
+      }
+      c.resolved = true;
+      state.used.push(id);
+      state.resolvedInRoom++;
+      state.lastResolved = id;
+    });
+  }
+  function runAway() {
+    if (!canRun()) return;
+    commit(() => {
+      log(`Ran from room: ${inRoomIds().map(label).join(' ')}`, 'run');
+      state.room = [null, null, null, null];
+      state.ranLastRoom = true;
+      state.stats.runs++;
+      nextRoomReset();
+    });
+    openPickerForNext();
+  }
+  function nextRoom() {
+    if (!roomDone()) return;
+    commit(() => {
+      const left = unresolved();
+      state.room = [null, null, null, null];
+      left.forEach((c, i) => { state.room[i] = { card: c.card, resolved: false, carried: true }; });
+      state.ranLastRoom = false;
+      nextRoomReset();
+    });
+    openPickerForNext();
+  }
+  function nextRoomReset() {
+    state.roomNo++;
+    state.resolvedInRoom = 0;
+    state.potionUsedInRoom = false;
+  }
+  function newGame() {
+    history = [];
+    state = fresh();
+    log('New dungeon. Deal 4 cards to start.');
+    closeSheet();
+    save();
+    render();
+    openPickerForNext();
+  }
+
+  // ---------- Rendering ----------
+  const $ = id => document.getElementById(id);
+
+  function badgeFor(id) {
+    const v = valueOf(id), role = roleOf(id);
+    if (role === 'monster') {
+      if (weaponUsableOn(v)) { const d = weaponDamage(v); return [`${d ? '−' + d : '0'} ⚔`, d ? 'dmg' : 'zero']; }
+      return [`−${v}`, 'dmg'];
+    }
+    if (role === 'potion') {
+      if (state.potionUsedInRoom) return ['wasted', 'zero'];
+      return [`+${Math.min(v, MAX_HP - state.hp)}`, 'heal'];
+    }
+    return ['equip', 'equip'];
+  }
+
+  function render() {
+    const s = state;
+    $('roomLabel').textContent = `Room ${s.roomNo}`;
+    $('undoBtn').disabled = !history.length;
+
+    // health
+    const hp = Math.max(0, s.hp);
+    $('hp').innerHTML = `${hp}<span> / ${MAX_HP}</span>`;
+    const pct = hp / MAX_HP * 100;
+    const fill = $('hpFill');
+    fill.style.width = pct + '%';
+    fill.className = 'hp-fill' + (pct > 60 ? ' ok' : pct > 30 ? ' mid' : '');
+
+    // weapon
+    if (s.weapon) {
+      const w = s.weapon;
+      $('weapon').innerHTML = miniHTML(w.card) +
+        (w.slain.length ? `<div><div class="label">slain</div><div class="slain">${w.slain.map(c => miniHTML(c, true)).join('')}</div></div>` : '');
+      $('weaponHint').textContent = w.slain.length
+        ? `Usable on monsters below ${valueOf(w.slain[w.slain.length - 1])}`
+        : `Fresh — usable on any monster (blocks ${valueOf(w.card)})`;
+    } else {
+      $('weapon').innerHTML = '<span class="none">Barehanded</span>';
+      $('weaponHint').textContent = 'Equip a ♦ to reduce monster damage';
+    }
+
+    // dungeon stats
+    const deck = ALL_CARDS.filter(id => isAvailable(id));
+    const mons = deck.filter(id => roleOf(id) === 'monster');
+    $('dstats').innerHTML = [
+      [dungeonLeft(), 'cards left'],
+      [mons.reduce((a, id) => a + valueOf(id), 0), `monster pts (${mons.length})`],
+      [deck.filter(id => roleOf(id) === 'potion').length, '♥ potions'],
+      [deck.filter(id => roleOf(id) === 'weapon').length, '♦ weapons'],
+    ].map(([n, l]) => `<div><b>${n}</b>${l}</div>`).join('');
+    $('deckSum').textContent = ` · ${s.used.length} used · ${dungeonLeft()} left`;
+
+    // room
+    $('roomTitle').textContent = `Room ${s.roomNo}`;
+    const chips = [];
+    chips.push(`<span class="chip ${s.resolvedInRoom >= 3 ? 'on' : ''}">faced ${s.resolvedInRoom}/3</span>`);
+    chips.push(`<span class="chip ${s.potionUsedInRoom ? 'warn' : ''}">${s.potionUsedInRoom ? 'potion used' : 'potion ready'}</span>`);
+    chips.push(`<span class="chip ${s.ranLastRoom ? 'warn' : ''}">${s.ranLastRoom ? "can't run" : 'can run'}</span>`);
+    $('chips').innerHTML = chips.join('');
+
+    const need = slotsNeeded();
+    const slotsEl = $('slots');
+    slotsEl.innerHTML = '';
+    s.room.forEach((c, i) => {
+      const b = document.createElement('button');
+      if (!c) {
+        const beyond = i >= need || s.resolvedInRoom > 0;
+        b.className = 'slot empty' + (beyond ? ' disabled-slot' : '');
+        b.disabled = beyond || !!s.over;
+        b.innerHTML = beyond ? '<span>—</span>' : '<span class="plus">+</span><span class="role">deal card</span>';
+        b.setAttribute('aria-label', 'Deal card ' + (i + 1));
+        b.onclick = () => openPicker(i);
+      } else {
+        const id = c.card;
+        b.className = `slot card${isRed(id) ? ' red' : ''}${c.resolved ? ' resolved' : ''}${c.carried && !c.resolved ? ' carried' : ''}`;
+        const [txt, cls] = c.resolved ? [c.note || '✓', 'zero'] : badgeFor(id);
+        b.innerHTML = `<span class="corner">${rankLabel(valueOf(id))}<br>${suitOf(id).glyph}</span>
+          <span class="big">${suitOf(id).glyph}</span>
+          <span class="role">${ROLE_LABEL[roleOf(id)]} · ${valueOf(id)}</span>
+          <span class="badge ${cls}">${esc(txt)}</span>`;
+        b.setAttribute('aria-label', `${label(id)} ${ROLE_LABEL[roleOf(id)]}`);
+        b.disabled = c.resolved || !!s.over;
+        b.onclick = () => openActions(i);
+      }
+      slotsEl.appendChild(b);
+    });
+
+    $('runBtn').disabled = !canRun();
+    $('nextBtn').disabled = !roomDone();
+
+    let g = '';
+    if (s.over) g = s.over.won ? '🏆 Dungeon cleared!' : '☠ You died.';
+    else if (!roomFull()) g = `Deal ${need - filledCount()} more card${need - filledCount() === 1 ? '' : 's'} — tap an empty slot.`;
+    else if (roomDone()) g = 'Room cleared. Tap "Next room" — the last card carries over.';
+    else if (s.resolvedInRoom === 0) g = canRun() ? 'Tap a card to face it, or run away.' : 'Tap a card to face it.';
+    else g = `Face ${3 - s.resolvedInRoom} more card${3 - s.resolvedInRoom === 1 ? '' : 's'}.`;
+    if (!s.over && roomFull() && unresolved().length && s.resolvedInRoom < 3 && dungeonLeft() === 0 && unresolved().length <= 3 - s.resolvedInRoom)
+      g = 'Final room — face every card to escape!';
+    $('guide').textContent = g;
+
+    // grid of 44
+    const inRoom = inRoomIds();
+    let gh = '';
+    SUIT_ORDER.forEach(su => {
+      gh += `<div class="sh" style="color:${SUITS[su].color === 'red' ? 'var(--red)' : 'var(--black)'}">${SUITS[su].glyph}</div>`;
+      RANKS.forEach(r => {
+        const id = su + r;
+        if (!inDungeon(su, r)) { gh += '<div class="cell na"></div>'; return; }
+        const used = s.used.includes(id) || (inRoom.includes(id) && s.room.find(c => c && c.card === id).resolved);
+        gh += `<div class="cell${isRed(id) ? ' red' : ''}${used ? ' used' : ''}${inRoom.includes(id) ? ' inroom' : ''}">${rankLabel(r)}</div>`;
+      });
+    });
+    $('grid44').innerHTML = gh;
+
+    // log
+    $('log').innerHTML = s.log.slice().reverse()
+      .map(l => `<div class="${l.kind}"><span class="r">R${l.room}</span>${esc(l.text)}</div>`).join('');
+
+    if (s.over && !sheetOpen()) openGameOver();
+  }
+
+  // ---------- Sheets ----------
+  const backdrop = $('backdrop'), sheet = $('sheet');
+  let picker = null; // { slot, suit, color, except }
+  const sheetOpen = () => backdrop.classList.contains('show');
+  function showSheet(html, center) {
+    sheet.className = 'sheet' + (center ? ' center' : '');
+    sheet.innerHTML = html;
+    backdrop.classList.add('show');
+  }
+  function closeSheet() { backdrop.classList.remove('show'); picker = null; }
+  backdrop.addEventListener('click', e => { if (e.target === backdrop) closeSheet(); });
+
+  function openPickerForNext() {
+    if (state.over || state.resolvedInRoom > 0) return;
+    const need = slotsNeeded();
+    for (let i = 0; i < need; i++) if (!state.room[i]) { openPicker(i); return; }
+    closeSheet();
+  }
+
+  function openPicker(slot) {
+    const cur = state.room[slot];
+    const except = cur ? cur.card : null;
+    picker = { slot, suit: except ? except[0] : null, color: except ? suitOf(except).color : null, except };
+    renderPicker();
+  }
+
+  function renderPicker() {
+    const p = picker;
+    const need = slotsNeeded();
+    const title = p.except ? `Change ${label(p.except)}` : `Deal card ${p.slot + 1} of ${need}`;
+    const suitOpts = SUIT_ORDER.map(su => {
+      const S = SUITS[su];
+      const left = ALL_CARDS.filter(id => id[0] === su && isAvailable(id, p.except)).length;
+      const dis = (p.color && S.color !== p.color) || !left;
+      return `<button class="opt${p.suit === su ? ' sel' : ''}" data-suit="${su}" ${dis ? 'disabled' : ''}>
+        <span class="g ${S.color === 'red' ? 'red' : 'blk'}">${S.glyph}</span>
+        <span>${S.name}<small>${ROLE_LABEL[S.role]} · ${left} left</small></span></button>`;
+    }).join('');
+    const colorOpts = [['black', 'Black', '#222'], ['red', 'Red', '#c62828']].map(([k, n, sw]) =>
+      `<button class="opt${p.color === k ? ' sel' : ''}" data-color="${k}">
+        <span class="swatch" style="background:${sw}"></span><span>${n}<small>${k === 'black' ? 'Monsters' : 'Potions / Weapons'}</small></span></button>`).join('');
+    let rankOpts = '';
+    RANKS.forEach(r => {
+      const id = p.suit ? p.suit + r : null;
+      const ok = id && inDungeon(p.suit, r) && isAvailable(id, p.except);
+      if (p.suit && !inDungeon(p.suit, r)) return; // hide ranks that don't exist for this suit
+      rankOpts += `<button class="rank${p.color === 'red' ? ' red' : ''}${id === p.except ? ' cur' : ''}" data-rank="${r}" ${ok ? '' : 'disabled'}>${rankLabel(r)}</button>`;
+    });
+    showSheet(`
+      <div class="sheet-head"><h3>${title}</h3>
+        <div style="display:flex;gap:8px">
+          ${p.except && state.resolvedInRoom === 0 ? '<button class="icon-btn" data-remove="1">Remove</button>' : ''}
+          <button class="icon-btn" data-close="1">✕</button></div></div>
+      <div class="picker">
+        <div class="col"><h4 class="${p.suit ? 'done' : ''}"><span class="n">1</span>Suit</h4>${suitOpts}</div>
+        <div class="col"><h4 class="${p.color ? 'done' : ''}"><span class="n">2</span>Color</h4>${colorOpts}</div>
+        <div class="col col-rank"><h4><span class="n">3</span>Rank</h4><div class="ranks">${rankOpts}</div>
+          <div class="pick-hint">${p.suit ? 'Tap a rank to place the card. Crossed-out = already seen.' : 'Pick a suit first (or a color to narrow suits).'}</div></div>
+      </div>
+      <div class="pick-hint" style="margin-top:10px">Keys: <kbd>c</kbd><kbd>s</kbd><kbd>h</kbd><kbd>d</kbd> suit · <kbd>b</kbd><kbd>r</kbd> color · <kbd>2</kbd>–<kbd>9</kbd> <kbd>0</kbd>=10 <kbd>j</kbd><kbd>q</kbd><kbd>k</kbd><kbd>a</kbd> rank</div>`);
+    sheet.querySelectorAll('[data-suit]').forEach(b => b.onclick = () => pickSuit(b.dataset.suit));
+    sheet.querySelectorAll('[data-color]').forEach(b => b.onclick = () => pickColor(b.dataset.color));
+    sheet.querySelectorAll('[data-rank]').forEach(b => b.onclick = () => pickRank(+b.dataset.rank));
+    sheet.querySelector('[data-close]').onclick = closeSheet;
+    const rm = sheet.querySelector('[data-remove]');
+    if (rm) rm.onclick = () => { const sl = picker.slot; closeSheet(); removeCard(sl); };
+  }
+  function pickSuit(su) {
+    if (!picker) return;
+    picker.suit = su; picker.color = SUITS[su].color;
+    renderPicker();
+  }
+  function pickColor(col) {
+    if (!picker) return;
+    picker.color = col;
+    if (picker.suit && SUITS[picker.suit].color !== col) picker.suit = null;
+    // only one suit of this color with cards left? pick it automatically
+    const opts = SUIT_ORDER.filter(su => SUITS[su].color === col && ALL_CARDS.some(id => id[0] === su && isAvailable(id, picker.except)));
+    if (!picker.suit && opts.length === 1) picker.suit = opts[0];
+    renderPicker();
+  }
+  function pickRank(r) {
+    if (!picker || !picker.suit) return;
+    const id = picker.suit + r;
+    if (!inDungeon(picker.suit, r) || !isAvailable(id, picker.except)) return;
+    const wasChange = !!picker.except;
+    setCard(picker.slot, id);
+    closeSheet();
+    if (!wasChange) openPickerForNext();
+  }
+
+  function openActions(slot) {
+    const c = state.room[slot];
+    if (!c || c.resolved || state.over) return;
+    const id = c.card, v = valueOf(id), role = roleOf(id);
+    const acts = [];
+    const blocked = !canResolve();
+    let reason = '';
+    if (!roomFull()) reason = 'Deal the rest of the room first.';
+    else if (state.resolvedInRoom >= 3) reason = 'You already faced 3 cards — go to the next room.';
+
+    if (role === 'monster') {
+      if (state.weapon) {
+        const usable = weaponUsableOn(v);
+        const d = usable ? weaponDamage(v) : null;
+        const last = state.weapon.slain[state.weapon.slain.length - 1];
+        acts.push({ how: 'weapon', rec: usable && d < v, text: `⚔ Fight with ${label(state.weapon.card)}`,
+          sub: usable ? 'Monster is stacked on your weapon' : `Weapon too worn — only monsters below ${valueOf(last)}`,
+          out: usable ? (d ? `−${d} HP` : 'no damage') : '', cls: usable && d ? 'dmg' : 'zero', dis: !usable });
+      }
+      acts.push({ how: 'bare', text: '✊ Fight barehanded', sub: state.weapon ? 'Keeps your weapon fresh' : 'No weapon equipped',
+        out: `−${v} HP`, cls: 'dmg', rec: !state.weapon || !weaponUsableOn(v) });
+    } else if (role === 'weapon') {
+      acts.push({ how: 'equip', rec: true, text: `🗡 Equip ${label(id)}`,
+        sub: state.weapon ? `Discards ${label(state.weapon.card)}${state.weapon.slain.length ? ' and ' + state.weapon.slain.length + ' slain' : ''}` : 'Blocks up to ' + v + ' damage',
+        out: 'equip', cls: 'zero' });
+    } else {
+      if (state.potionUsedInRoom) {
+        acts.push({ how: 'discard', rec: true, text: '🗑 Discard potion', sub: 'Only one potion per room has an effect', out: '+0', cls: 'zero' });
+      } else {
+        const gain = Math.min(v, MAX_HP - state.hp);
+        acts.push({ how: 'drink', rec: true, text: `🧪 Drink ${label(id)}`, sub: gain < v ? `Health caps at ${MAX_HP} (${v - gain} wasted)` : 'Restores health',
+          out: `+${gain} HP`, cls: gain ? 'heal' : 'zero' });
+      }
+    }
+    const html = acts.map((a, i) => `<button class="act${a.rec ? ' rec' : ''}" data-i="${i}" ${a.dis || blocked ? 'disabled' : ''}>
+        <span>${a.text}<small>${a.sub}</small></span><span class="out ${a.cls}">${a.out}</span></button>`).join('');
+    showSheet(`
+      <div class="sheet-head"><h3>${miniHTML(id)} &nbsp;${ROLE_LABEL[role]} · ${v}</h3><button class="icon-btn" data-close="1">✕</button></div>
+      ${reason ? `<div class="guide" style="margin:0 0 10px">${reason}</div>` : ''}
+      ${html}
+      <button class="act" data-change="1"><span>✎ Change card<small>Fix a mis-pick</small></span><span></span></button>`);
+    sheet.querySelectorAll('[data-i]').forEach(b => b.onclick = () => { const a = acts[+b.dataset.i]; closeSheet(); resolveCard(slot, a.how); });
+    sheet.querySelector('[data-change]').onclick = () => openPicker(slot);
+    sheet.querySelector('[data-close]').onclick = closeSheet;
+  }
+
+  function openGameOver() {
+    const o = state.over;
+    showSheet(`<div class="over">
+      <div class="big">${o.won ? '🏆' : '☠'}</div>
+      <h3>${o.won ? 'You escaped the dungeon!' : 'You died in the dungeon'}</h3>
+      <div class="score">${o.score}</div><div class="label">Score</div>
+      <p class="hint">Rooms: ${state.roomNo} · Monsters slain: ${state.stats.slain} · Damage taken: ${state.stats.dmg} · Healed: ${state.stats.healed} · Ran: ${state.stats.runs}×</p>
+      <div class="actions" style="margin-top:14px">
+        <button class="btn" data-undo="1">↶ Undo last</button>
+        <button class="btn primary" data-new="1">New game</button>
+      </div></div>`, true);
+    sheet.querySelector('[data-undo]').onclick = undo;
+    sheet.querySelector('[data-new]').onclick = newGame;
+  }
+
+  function openRules() {
+    showSheet(`<div class="sheet-head"><h3>How to play Scoundrel</h3><button class="icon-btn" data-close="1">✕</button></div>
+      <div class="rules">
+        <h4>Setup</h4><ul><li>Remove jokers, red face cards and red aces → 44-card dungeon.</li><li>Start with 20 health (max 20).</li></ul>
+        <h4>Cards</h4><ul><li>♣ ♠ <b>Monsters</b> — damage = value (J 11, Q 12, K 13, A 14).</li>
+        <li>♦ <b>Weapons</b> — equip; replaces your old weapon.</li><li>♥ <b>Potions</b> — heal value; only one per room works.</li></ul>
+        <h4>Each room</h4><ul><li>Deal until 4 cards are face up.</li><li>Either <b>run</b> (all 4 to bottom of the dungeon — never twice in a row), or face 3 of the 4 cards.</li>
+        <li>The 4th card carries into the next room.</li></ul>
+        <h4>Fighting</h4><ul><li>Barehanded: take full damage.</li><li>With weapon: take monster − weapon (min 0).</li>
+        <li>After a kill, the weapon only works on monsters <b>lower</b> than the last one it slew.</li></ul>
+        <h4>Score</h4><ul><li>Die: minus the sum of all monsters still alive.</li><li>Survive: remaining health (+ potion value if at 20 health and your last card was a potion).</li></ul>
+        <h4>Using this app</h4><ul><li>Tap <b>+</b> to deal: Suit → Color → Rank. Seen cards are crossed out.</li><li>Tap a card to face it — outcomes are pre-calculated.</li><li>Everything can be undone; progress is auto-saved.</li></ul>
+      </div>`);
+    sheet.querySelector('[data-close]').onclick = closeSheet;
+  }
+
+  // ---------- Wiring ----------
+  $('undoBtn').onclick = undo;
+  $('runBtn').onclick = runAway;
+  $('nextBtn').onclick = nextRoom;
+  $('rulesBtn').onclick = openRules;
+  $('newBtn').onclick = () => { if (!state.log.length || confirm('Start a new game? Current progress will be lost.')) newGame(); };
+
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); return; }
+    if (e.key === 'Escape') { closeSheet(); return; }
+    if (!picker || e.ctrlKey || e.metaKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    const suitKeys = { c: 'C', s: 'S', h: 'H', d: 'D' };
+    const rankKeys = { j: 11, q: 12, k: 13, a: 14, t: 10, '0': 10 };
+    if (suitKeys[k]) pickSuit(suitKeys[k]);
+    else if (k === 'b') pickColor('black');
+    else if (k === 'r') pickColor('red');
+    else if (rankKeys[k]) pickRank(rankKeys[k]);
+    else if (k === '1') pickRank(10);
+    else if (/^[2-9]$/.test(k)) pickRank(+k);
+  });
+
+  load();
+  if (!state.log.length) log('New dungeon. Deal 4 cards to start.');
+  render();
+  if (!state.over && !roomFull()) openPickerForNext();
+})();
+</script>
+</body>
+</html>
