@@ -3,219 +3,576 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#14110f">
+<meta name="theme-color" content="#f0ede6">
 <title>Scoundrel Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wdth,wght@75..112.5,100..800&display=swap">
+<!-- Kanji face for the cards. `text=` asks Google Fonts for only the 75 characters used below (~25 KB). -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@800&display=swap&text=%E9%AC%BC%E7%81%AB%E6%B2%B3%E7%AB%A5%E9%8E%8C%E9%BC%AC%E5%8C%96%E7%8C%AB%E7%8B%92%E3%80%85%E7%99%BE%E8%B6%B3%E7%89%9B%E8%BB%8A%E9%9B%B7%E7%8D%A3%E5%A4%A9%E7%8B%97%E5%A6%96%E7%8B%90%E5%A4%A7%E8%9B%87%E9%BE%8D%E7%8E%8B%E9%A4%93%E5%B9%BD%E9%9C%8A%E9%AA%B8%E9%AA%A8%E5%B1%B1%E5%A7%A5%E9%9B%AA%E5%A5%B3%E6%80%A8%E5%A9%86%E5%A4%9C%E5%8F%89%E7%BE%85%E5%88%B9%E4%BF%AE%E8%88%AC%E8%8B%A5%E9%96%BB%E9%AD%94%E6%AD%BB%E7%A5%9E%E7%AB%B9%E6%A7%8D%E6%9C%A8%E5%88%80%E7%9F%AD%E9%8E%96%E8%84%87%E5%B7%AE%E8%96%99%E5%BC%93%E5%A4%AA%E5%90%8D%E6%9C%9D%E9%9C%B2%E8%96%AC%E8%8D%89%E6%B8%85%E6%B0%B4%E7%94%98%E9%85%92%E8%89%AF%E7%A7%98%E4%BB%99%E4%B8%B9%E7%94%9F%E9%82%84%E8%A8%8E%E6%82%AA%E5%85%9A">
 <style>
-  :root {
-    --bg: #14110f;
-    --panel: #1f1a17;
-    --panel2: #2a2320;
-    --line: #3a302b;
-    --text: #efe6dc;
-    --muted: #9c8f84;
-    --red: #e0524a;
-    --black: #e9e4de;
-    --gold: #d9a441;
-    --green: #5bbf73;
-    --blue: #5b9bd5;
-    --card: #f6f1e7;
-    --card-ink: #1b1b1b;
-    --card-red: #c62828;
-    --radius: 14px;
+  /* ---------- Type ---------- */
+  @font-face {
+    font-family: "TRJN DaVinci";
+    src: url("fonts/TRJNDaVinci-Italic.ttf") format("truetype");
+    font-weight: 400; font-style: normal; font-display: swap;
   }
+  @font-face {
+    font-family: "Die Grotesk C";
+    src: url("fonts/Die%20Grotesk%20C%20-%20Regular.ttf") format("truetype");
+    font-weight: 400; font-style: normal; font-display: swap;
+    ascent-override: 95%; descent-override: 25%; line-gap-override: 0%;
+  }
+  @font-face {
+    font-family: "Die Grotesk C";
+    src: url("fonts/Die%20Grotesk%20C%20-%20Medium.ttf") format("truetype");
+    font-weight: 500; font-style: normal; font-display: swap;
+    ascent-override: 95%; descent-override: 25%; line-gap-override: 0%;
+  }
+
+  :root {
+    --paper: #f0ede6;
+    --card-hi: #fdfcf9;
+    --card-lo: #efebe3;
+    --blind: #ece7de;
+    --ink: #1c1b18;
+    --ink-2: #4d4943;
+    --ink-3: #857f75;
+    --ink-4: #b5afa4;
+    --rule: rgba(28, 27, 24, .14);
+    --rule-2: rgba(28, 27, 24, .07);
+    --sh: 64, 48, 30;
+    --shu: #c0392b;
+    --moss: #4b6f4f;
+    --ai: #33506f;
+    --ochre: #a2762a;
+
+    --f-display: "TRJN DaVinci", "Iowan Old Style", Palatino, Georgia, serif;
+    --f-body: "Die Grotesk C", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --f-mono: "Martian Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --f-jp: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", YuMincho, "Noto Serif JP", serif;
+
+    --ease: cubic-bezier(.2, .8, .2, 1);
+    --gutter: clamp(20px, 5.5vw, 72px);
+
+    /* raised ink: light from the top-left */
+    --emb: -.02em -.028em 0 rgba(255, 255, 255, 1), .018em .035em .008em rgba(var(--sh), .5), .05em .085em .09em rgba(var(--sh), .2);
+    --emb-svg: drop-shadow(-.5px -.6px 0 rgba(255, 255, 255, 1)) drop-shadow(.5px 1px .5px rgba(var(--sh), .45));
+    /* blind emboss: relief without ink */
+    --blind-txt: -.035em -.035em .01em rgba(255, 255, 255, 1), .035em .05em .035em rgba(var(--sh), .34);
+    --blind-svg: drop-shadow(-.6px -.6px 0 rgba(255, 255, 255, 1)) drop-shadow(.7px .9px .5px rgba(var(--sh), .32));
+    --lift: inset 0 1px 0 rgba(255, 255, 255, .95), 0 0 0 .5px rgba(var(--sh), .18), 0 2px 3px rgba(var(--sh), .08), 0 12px 18px -6px rgba(var(--sh), .16), 0 30px 44px -18px rgba(var(--sh), .38);
+
+    --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .25 0 0 0 0 .19 0 0 0 0 .12 0 0 0 .55 -.22'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; background: var(--bg); color: var(--text);
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  body { padding-bottom: env(safe-area-inset-bottom); }
-  button { font: inherit; color: inherit; cursor: pointer; border: none; }
-  button:disabled { cursor: not-allowed; opacity: .35; }
-  .app { max-width: 760px; margin: 0 auto; padding: 12px 14px 40px; }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  html, body { margin: 0; background-color: var(--paper); color: var(--ink); }
+  body {
+    font: 400 15px/1.5 var(--f-body);
+    background-image: var(--grain);
+    font-synthesis: none; font-kerning: normal;
+    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  button { font: inherit; color: inherit; background: none; border: 0; padding: 0; margin: 0; cursor: pointer; text-align: inherit; }
+  button:disabled { cursor: default; }
+  b, strong { font-weight: 500; }
+  h1, h2, h3, h4 { font-weight: 400; margin: 0; }
+  p { margin: 0; }
+  :focus { outline: none; }
+  :focus-visible { outline: 1.5px solid var(--ink); outline-offset: 4px; border-radius: 6px; }
+  ::selection { background: rgba(192, 57, 43, .16); }
 
-  header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-  header h1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; font-size: 20px; letter-spacing: 3px; margin: 0; flex: 1; font-weight: 800; }
-  @media (max-width: 400px) { header h1 { font-size: 17px; letter-spacing: 1.5px; } .icon-btn { padding: 8px 10px; } }
-  header h1 small { font-size: 12px; letter-spacing: 1px; color: var(--muted); font-weight: 500; margin-left: 6px; }
-  .icon-btn { background: var(--panel2); border-radius: 10px; padding: 8px 12px; font-size: 15px; }
+  .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .label, .eyebrow { font: 500 11px/1 var(--f-body); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+  .meta { font: 400 11px/1.4 var(--f-mono); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+  .suit { width: 1em; height: 1em; fill: currentColor; display: inline-block; vertical-align: -.12em; flex: none; }
+  .ico { width: .95em; height: .95em; display: inline-block; vertical-align: -.12em; margin-left: .35em; }
+  .ink-red { color: var(--shu); }
 
-  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 12px; }
-  .label { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); }
+  /* ---------- Layout ---------- */
+  .app { max-width: 1240px; margin: 0 auto; padding: 0 var(--gutter) clamp(64px, 10vw, 140px); }
 
-  /* Health */
-  .hp-row { display: flex; align-items: baseline; gap: 10px; }
-  .hp-num { font-size: 34px; font-weight: 800; }
-  .hp-num span { font-size: 16px; color: var(--muted); font-weight: 500; }
-  .hp-bar { height: 12px; background: var(--panel2); border-radius: 99px; overflow: hidden; margin-top: 6px; }
-  .hp-fill { height: 100%; background: linear-gradient(90deg, #b3261e, var(--red)); transition: width .3s; }
-  .hp-fill.ok { background: linear-gradient(90deg, #3d8f55, var(--green)); }
-  .hp-fill.mid { background: linear-gradient(90deg, #b07a1f, var(--gold)); }
+  .top { padding-top: max(14px, env(safe-area-inset-top)); }
+  .meta-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 48px; border-bottom: 1px solid var(--rule); }
+  .nav { display: flex; gap: clamp(18px, 3vw, 36px); }
+  .nav button { position: relative; padding: 12px 0; font-weight: 500; font-size: 14px; color: var(--ink-2); transition: color .2s; }
+  .nav button::after { content: ""; position: absolute; left: 0; right: 0; bottom: 8px; height: 1px; background: currentColor;
+    transform: scaleX(0); transform-origin: left; transition: transform .4s var(--ease); }
+  .nav button:hover:not(:disabled) { color: var(--ink); }
+  .nav button:hover:not(:disabled)::after { transform: scaleX(1); }
+  .nav button:disabled { color: var(--ink-4); }
 
-  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  @media (max-width: 520px) { .stats { grid-template-columns: 1fr; } }
+  .mast { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 22px 48px;
+    padding: clamp(40px, 8vw, 104px) 0 clamp(44px, 7vw, 88px); }
+  .wordmark { display: flex; align-items: flex-start; gap: .07em; margin-left: -.03em;
+    font: 400 clamp(68px, 12vw, 156px)/.8 var(--f-display); letter-spacing: -.015em; }
+  .seal { display: inline-block; flex: none; writing-mode: vertical-rl; text-orientation: upright;
+    font: 800 clamp(12px, 1.3vw, 18px)/1 var(--f-jp); letter-spacing: .14em;
+    color: #faf0e9; background: var(--shu); padding: .55em .36em .41em; border-radius: .2em;
+    box-shadow: inset 0 0 0 .16em var(--shu), inset 0 0 0 .23em rgba(255, 244, 236, .75), 0 1px 0 rgba(255, 255, 255, .6);
+    transform: rotate(-4deg); margin-top: .5em; }
+  .seal.ink { background: var(--ink); box-shadow: inset 0 0 0 .16em var(--ink), inset 0 0 0 .23em rgba(255, 244, 236, .6); }
+  .tagline { max-width: 30ch; padding-bottom: .35em; font-size: 16px; line-height: 1.45; color: var(--ink-2); }
 
-  /* Weapon */
-  .weapon { display: flex; gap: 10px; align-items: center; margin-top: 6px; min-height: 60px; }
-  .weapon .none { color: var(--muted); font-style: italic; }
-  .slain { display: flex; flex-wrap: wrap; gap: 4px; }
-  .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  /* stats band */
+  .stats { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1.65fr);
+    border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  .stat { min-width: 0; padding: 28px clamp(20px, 3vw, 40px) 32px; }
+  .stat:first-child { padding-left: 0; }
+  .stat:last-child { padding-right: 0; }
+  .stat + .stat { border-left: 1px solid var(--rule); }
 
-  /* Mini cards */
-  .mini { display: inline-flex; align-items: center; justify-content: center; min-width: 36px; height: 48px; padding: 0 4px;
-    background: var(--card); color: var(--card-ink); border-radius: 6px; font-weight: 800; font-size: 15px; box-shadow: 0 1px 0 #0006; }
-  .mini.sm { min-width: 28px; height: 36px; font-size: 12px; }
-  .mini.red { color: var(--card-red); }
+  .hp { display: flex; align-items: baseline; gap: 10px; margin-top: 22px; }
+  .hp-num { font: 250 clamp(52px, 6vw, 76px)/.86 var(--f-mono); font-stretch: 87.5%; letter-spacing: -.05em; font-variant-numeric: tabular-nums; }
+  .hp-max { font: 400 13px/1 var(--f-mono); color: var(--ink-3); }
+  .ticks { display: flex; justify-content: space-between; align-items: flex-end; max-width: 236px; height: 16px; margin-top: 20px; }
+  .ticks i { flex: 0 0 2px; height: 62%; border-radius: 1px; background: var(--rule); transition: background .5s; }
+  .ticks i:nth-child(5n) { height: 100%; }
+  .ticks i.on { background: var(--ink); }
+  .ticks.mid i.on { background: var(--ochre); }
+  .ticks.low i.on { background: var(--shu); }
 
-  .dstats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; text-align: center; }
-  .dstats b { display: block; font-size: 20px; }
-  .dstats div { background: var(--panel2); border-radius: 10px; padding: 6px 2px; font-size: 11px; color: var(--muted); }
+  .weapon { display: flex; align-items: center; gap: 20px; min-height: 76px; margin-top: 18px; }
+  .wstack { display: flex; padding: 2px 0; }
+  .wstack .pc { --mw: 52px; }
+  .wstack .pc + .pc { margin-left: -34px; }
+  .wslain { display: grid; gap: 8px; }
+  .wslain b { font: 300 22px/1 var(--f-mono); font-weight: 300; }
+  .barehanded { font: 400 clamp(32px, 3.4vw, 42px)/1 var(--f-display); color: var(--ink-3); }
+  .hint { max-width: 32ch; margin-top: 14px; font-size: 13px; line-height: 1.45; color: var(--ink-3); }
 
-  /* Room */
-  .room-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .room-head h2 { margin: 0; font-size: 18px; }
-  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
-  .chip { font-size: 11px; padding: 4px 8px; border-radius: 99px; background: var(--panel2); color: var(--muted); }
-  .chip.on { background: #3b2a12; color: var(--gold); }
-  .chip.warn { background: #3a1716; color: var(--red); }
-  .slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 14px 0; }
-  @media (max-width: 460px) { .slots { grid-template-columns: repeat(2, 1fr); } }
-  .slot { position: relative; aspect-ratio: 5 / 7; border-radius: 12px; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; transition: transform .15s; }
-  .slot.empty { border: 2px dashed var(--line); background: transparent; color: var(--muted); }
-  .slot.empty:not(:disabled):hover { border-color: var(--gold); color: var(--gold); }
-  .slot.empty .plus { font-size: 34px; line-height: 1; }
-  .slot.card { background: var(--card); color: var(--card-ink); box-shadow: 0 4px 14px #0008; }
-  .slot.card:not(:disabled):active { transform: scale(.97); }
-  .slot.card.red { color: var(--card-red); }
-  .slot .corner { position: absolute; top: 6px; left: 8px; font-weight: 800; font-size: 15px; line-height: 1; text-align: center; }
-  .slot .big { font-size: 42px; line-height: 1; }
-  .slot .role { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #6b625a; margin-top: 4px; }
-  .slot .badge { position: absolute; bottom: 6px; left: 6px; right: 6px; border-radius: 8px; font-size: 13px; font-weight: 700;
-    padding: 3px 0; text-align: center; background: #0000000f; }
-  .badge.dmg { background: #fde2e0; color: #b3261e; }
-  .badge.heal { background: #dff3e4; color: #23733a; }
-  .badge.equip { background: #e0ecf8; color: #245d94; }
-  .badge.zero { background: #eee; color: #777; }
-  .slot.resolved { opacity: .38; filter: grayscale(.7); }
-  .slot.resolved::after { content: "✓"; position: absolute; top: 4px; right: 8px; font-size: 18px; color: #2e7d32; font-weight: 900; }
-  .slot.carried::before { content: "carried"; position: absolute; top: -9px; right: 8px; font-size: 10px; background: var(--gold);
-    color: #000; padding: 1px 6px; border-radius: 99px; font-weight: 700; }
-  .slot.disabled-slot { border-style: dotted; opacity: .3; }
+  .dstats { display: grid; grid-template-columns: repeat(4, max-content); justify-content: space-between; gap: 16px; margin-top: 22px; }
+  .dstats .n { display: block; font: 250 clamp(32px, 3.6vw, 46px)/.86 var(--f-mono); font-stretch: 87.5%; letter-spacing: -.045em; }
+  .dstats .l { display: block; margin-top: 14px; font-size: 12px; line-height: 1.35; color: var(--ink-3); }
+  .dstats .l .sub { display: block; color: var(--ink-4); }
+  .dstats .l .suit { font-size: 10px; margin-left: 2px; }
 
+  /* room */
+  .room { padding: clamp(52px, 8vw, 116px) 0 clamp(52px, 7vw, 100px); }
+  .room-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 24px 40px;
+    max-width: 1000px; margin-bottom: clamp(40px, 5.5vw, 72px); }
+  .room-title { font: 400 clamp(64px, 10.5vw, 136px)/.78 var(--f-display); letter-spacing: -.015em; }
+  .room-title .no { font-feature-settings: "onum"; }
+  .status { display: flex; gap: clamp(22px, 3.5vw, 48px); padding-bottom: 6px; }
+  .st { display: grid; gap: 9px; }
+  .st .k { font: 500 10.5px/1 var(--f-body); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+  .st .v { font: 400 13px/1 var(--f-mono); white-space: nowrap; }
+  .st.on .v { color: var(--moss); }
+  .st.warn .v { color: var(--shu); }
+
+  .slots { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(12px, 2.8vw, 40px); max-width: 1000px; }
+  .slot { position: relative; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .slot:focus-visible { outline: none; }
+  .slot:focus-visible .pc, .slot:focus-visible .well { outline: 1.5px solid var(--ink); outline-offset: 5px; }
+  .slot.card:not(:disabled):hover .pc { transform: translateY(-6px); box-shadow: var(--lift); }
+  .slot.card:not(:disabled):active .pc { transform: translateY(-2px) scale(.985); }
+  .slot.carried::before { content: "Carried"; position: absolute; left: 0; bottom: 100%; margin-bottom: 12px;
+    font: 500 10px/1 var(--f-body); letter-spacing: .16em; text-transform: uppercase; color: var(--shu); }
+  .slot.deal-in .pc { animation: dealIn .65s var(--ease) both; animation-delay: calc(var(--d, 0) * 80ms); }
+  @keyframes dealIn { from { opacity: 0; transform: translateY(-26px) rotate(-2deg); } }
+
+  .cap { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; min-height: 16px;
+    font: 400 12px/1.2 var(--f-mono); color: var(--ink-3); white-space: nowrap; }
+  .cap .out { color: var(--ink); }
+  .cap .out.dmg { color: var(--shu); }
+  .cap .out.heal { color: var(--moss); }
+  .cap .out.equip { color: var(--ai); }
+  .cap .out.zero { color: var(--ink-3); }
+
+  .well { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; aspect-ratio: 5 / 7; border-radius: 7% / 5%; color: var(--ink-3);
+    background: rgba(var(--sh), .035);
+    box-shadow: inset 0 1px 3px rgba(var(--sh), .17), inset 0 0 0 .5px rgba(var(--sh), .13), 0 1px 0 rgba(255, 255, 255, .9);
+    transition: color .25s, background .25s; }
+  .well .plus { font: 200 clamp(26px, 3.4vw, 42px)/1 var(--f-mono); }
+  .well .lbl { font: 500 10px/1 var(--f-body); letter-spacing: .16em; text-transform: uppercase; }
+  .slot.empty:not(:disabled):hover .well { color: var(--ink); background: rgba(var(--sh), .065); }
+  .slot.disabled-slot .well { background: none; box-shadow: inset 0 0 0 .5px var(--rule-2); }
+
+  .room-foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 22px 40px;
+    max-width: 1000px; margin-top: clamp(36px, 5vw, 60px); }
+  .guide { flex: 1 1 280px; min-height: 24px; font-size: 16px; line-height: 1.45; color: var(--ink-2); }
   .actions { display: flex; gap: 10px; }
-  .btn { flex: 1; padding: 14px 12px; border-radius: 12px; background: var(--panel2); font-weight: 700; font-size: 15px; }
-  .btn.primary { background: var(--gold); color: #1b1203; }
-  .btn.danger { background: #4a1b19; color: #ffb4ae; }
-  .guide { text-align: center; color: var(--muted); font-size: 13px; margin-top: 10px; min-height: 18px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 52px; padding: 0 28px;
+    border-radius: 999px; font-weight: 500; font-size: 15px; color: var(--ink); white-space: nowrap;
+    box-shadow: inset 0 0 0 1px var(--rule); transition: background .25s, color .25s, box-shadow .25s; }
+  .btn:hover:not(:disabled) { box-shadow: inset 0 0 0 1px var(--ink); }
+  .btn.primary { background: var(--ink); color: var(--paper); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), 0 10px 20px -12px rgba(var(--sh), .7); }
+  .btn.primary:hover:not(:disabled) { background: #000; }
+  .btn:disabled { color: var(--ink-4); background: none; box-shadow: inset 0 0 0 1px var(--rule-2); }
 
-  details.panel summary { cursor: pointer; font-weight: 700; list-style: none; }
-  details.panel summary::before { content: "▸ "; color: var(--muted); }
-  details.panel[open] summary::before { content: "▾ "; }
-  .grid44 { display: grid; grid-template-columns: 28px repeat(13, 1fr); gap: 3px; margin-top: 10px; font-size: 12px; }
-  .grid44 .cell { text-align: center; padding: 5px 0; border-radius: 5px; background: var(--card); color: var(--card-ink); font-weight: 700; }
-  .grid44 .cell.red { color: var(--card-red); }
-  .grid44 .cell.used { background: transparent; color: #5a4f48; text-decoration: line-through; }
-  .grid44 .cell.inroom { outline: 2px solid var(--gold); }
-  .grid44 .cell.na { background: transparent; }
-  .grid44 .sh { text-align: center; padding: 5px 0; font-weight: 800; }
-  .log { max-height: 260px; overflow: auto; margin-top: 8px; font-size: 13px; }
-  .log div { padding: 5px 0; border-bottom: 1px solid var(--line); }
-  .log .r { color: var(--muted); display: inline-block; width: 38px; }
-  .log .dmg { color: #ff9a92; } .log .heal { color: #8fe0a4; } .log .equip { color: #9cc7f0; } .log .run { color: var(--gold); }
+  /* deck grid + log */
+  .lower { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 0 clamp(32px, 6vw, 96px); border-top: 1px solid var(--rule); }
+  .fold { padding: 30px 0 8px; }
+  .fold summary { display: flex; align-items: baseline; gap: 16px; list-style: none; cursor: pointer; }
+  .fold summary::-webkit-details-marker { display: none; }
+  .fold summary h2 { font: 400 clamp(36px, 4vw, 50px)/1 var(--f-display); }
+  .fold summary::after { content: "+"; margin-left: auto; font: 200 24px/1 var(--f-mono); color: var(--ink-3); transition: transform .4s var(--ease); }
+  .fold[open] summary::after { transform: rotate(45deg); }
 
-  /* Sheets */
-  .backdrop { position: fixed; inset: 0; background: #000a; display: none; align-items: flex-end; justify-content: center; z-index: 10; }
-  .backdrop.show { display: flex; }
-  .sheet { background: var(--panel); width: 100%; max-width: 760px; border-radius: 18px 18px 0 0; padding: 16px 16px calc(18px + env(safe-area-inset-bottom));
-    border: 1px solid var(--line); max-height: 92vh; overflow: auto; animation: up .18s ease-out; }
-  .sheet.center { border-radius: 18px; margin: auto; max-width: 440px; }
-  @keyframes up { from { transform: translateY(30px); opacity: 0; } }
-  .sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 10px; }
-  .sheet-head h3 { margin: 0; font-size: 17px; }
-  .picker { display: grid; grid-template-columns: 1.2fr .8fr 1.6fr; gap: 12px; }
-  @media (max-width: 520px) { .picker { grid-template-columns: 1fr 1fr; } .picker .col-rank { grid-column: 1 / -1; } }
-  .col h4 { margin: 0 0 8px; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
-  .col h4 .n { display: inline-block; width: 18px; height: 18px; line-height: 18px; text-align: center; border-radius: 50%; background: var(--panel2); margin-right: 4px; }
-  .col h4.done .n { background: var(--gold); color: #000; }
-  .opt { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 12px; margin-bottom: 8px;
-    background: var(--panel2); border-radius: 10px; border: 2px solid transparent; }
-  .opt .g { font-size: 26px; line-height: 1; width: 26px; text-align: center; }
-  .opt .g.red { color: var(--red); } .opt .g.blk { color: var(--black); }
-  .opt small { display: block; color: var(--muted); font-size: 11px; }
-  .opt.sel { border-color: var(--gold); background: #33271a; }
-  .swatch { width: 22px; height: 22px; border-radius: 6px; border: 2px solid #fff3; }
-  .ranks { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-  .rank { padding: 14px 0; border-radius: 10px; background: var(--card); color: var(--card-ink); font-weight: 800; font-size: 18px; }
-  .rank.red { color: var(--card-red); }
-  .rank:disabled { background: var(--panel2); color: #5a4f48; opacity: 1; text-decoration: line-through; }
-  .rank.cur { outline: 3px solid var(--gold); }
-  .pick-hint { color: var(--muted); font-size: 12px; margin-top: 4px; }
-  .act { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 14px 14px; margin-bottom: 8px;
-    border-radius: 12px; background: var(--panel2); font-weight: 600; text-align: left; }
-  .act .out { font-weight: 800; }
-  .act .out.dmg { color: #ff9a92; } .act .out.heal { color: #8fe0a4; } .act .out.zero { color: var(--muted); }
-  .act.rec { border: 2px solid var(--gold); }
-  .act small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+  .grid44 { display: grid; grid-template-columns: 20px repeat(13, minmax(0, 1fr)); gap: 6px 4px; margin-top: 26px; }
+  .grid44 .sh { display: grid; place-items: center; font-size: 13px; }
+  .grid44 .cell { display: grid; place-items: center; aspect-ratio: 5 / 7; border-radius: 3px;
+    font: 400 10px/1 var(--f-mono); letter-spacing: -.03em;
+    background: linear-gradient(160deg, var(--card-hi), var(--card-lo));
+    box-shadow: inset 0 1px 0 #fff, 0 0 0 .5px rgba(var(--sh), .2), 0 1px 2px rgba(var(--sh), .15); }
+  .grid44 .cell.red { color: var(--shu); }
+  .grid44 .cell.used { background: none; color: var(--ink-4); box-shadow: inset 0 0 0 .5px rgba(var(--sh), .12), inset .5px 1px 1.5px rgba(var(--sh), .1); }
+  .grid44 .cell.inroom { box-shadow: 0 0 0 1px var(--ink), 0 1px 2px rgba(var(--sh), .15); }
+  .grid44 .cell.na { visibility: hidden; }
+
+  .log { max-height: 380px; margin-top: 18px; overflow: auto; overscroll-behavior: contain; }
+  .log > div { display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 12px; padding: 12px 0;
+    border-top: 1px solid var(--rule-2); font-size: 14px; line-height: 1.45; color: var(--ink-2); }
+  .log > div:first-child { border-top: 0; }
+  .log .r { font: 400 11px/20px var(--f-mono); color: var(--ink-3); }
+  .log .t::before { content: ""; display: inline-block; width: 5px; height: 5px; margin: 0 10px 2px 0; border-radius: 50%; background: var(--ink-4); }
+  .log .dmg .t::before { background: var(--shu); }
+  .log .heal .t::before { background: var(--moss); }
+  .log .equip .t::before { background: var(--ai); }
+  .log .run .t::before { background: var(--ochre); }
+
+  /* ---------- Playing card ---------- */
+  /* 1em inside .pc-face = card width / 7, so every card scales from one width. */
+  .pc { --ink-c: var(--ink); position: relative; display: block; width: 100%; aspect-ratio: 5 / 7;
+    border-radius: 7% / 5%; container-type: inline-size; color: var(--ink-c);
+    background: var(--grain), linear-gradient(158deg, var(--card-hi) 0%, #f8f5ef 48%, var(--card-lo) 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .95), inset 0 -1px 0 rgba(var(--sh), .06), 0 0 0 .5px rgba(var(--sh), .2),
+      0 1px 1px rgba(var(--sh), .08), 0 4px 8px -2px rgba(var(--sh), .1), 0 18px 30px -14px rgba(var(--sh), .32);
+    transition: transform .4s var(--ease), box-shadow .4s var(--ease);
+    -webkit-user-select: none; user-select: none; }
+  .pc.red { --ink-c: var(--shu); }
+  .pc-face { position: absolute; inset: 0; font-size: 14px; font-size: 14.28cqw; }
+  /* embossed ridge frame */
+  .pc-face::before { content: ""; position: absolute; inset: 6% 18.5%; border-radius: .3em;
+    background: linear-gradient(152deg, rgba(255, 255, 255, .7), rgba(255, 255, 255, 0) 42%, rgba(var(--sh), .04));
+    box-shadow: -1px -1px 0 rgba(255, 255, 255, 1), 1px 1px 0 rgba(var(--sh), .13), 2px 4px 7px -2px rgba(var(--sh), .16),
+      inset 1px 1px 0 rgba(255, 255, 255, .95), inset -1px -1px 0 rgba(var(--sh), .08); }
+  .pc.court .pc-face::after { content: ""; position: absolute; inset: calc(6% + .3em) calc(18.5% + .3em); border-radius: .16em;
+    box-shadow: inset 0 0 0 .5px rgba(var(--sh), .17); }
+  .pc-idx { position: absolute; top: 5.5%; left: 2.5%; width: 15%; display: flex; flex-direction: column; align-items: center; gap: .16em; line-height: 1; }
+  .pc-idx.br { top: auto; left: auto; bottom: 5.5%; right: 2.5%; transform: rotate(180deg); }
+  .pc-rank { font: 400 1.08em/.9 var(--f-display); letter-spacing: -.06em; text-shadow: var(--emb); white-space: nowrap; }
+  .pc-idx .suit { width: .6em; height: .6em; filter: var(--emb-svg); }
+  .pc-idx .kj { display: none; }
+  .pc-art { position: absolute; inset: 6% 18.5%; display: flex; align-items: center; justify-content: center; }
+  .pc-kanji { writing-mode: vertical-rl; text-orientation: upright; font: 800 1.9em/1 var(--f-jp); letter-spacing: .12em; text-shadow: var(--emb); }
+  .pc-romaji { position: absolute; left: 0; right: 0; bottom: .75em; text-align: center; font: 400 .3em/1 var(--f-mono);
+    letter-spacing: .24em; text-transform: uppercase; color: var(--ink-3); }
+  @container (max-width: 118px) { .pc-romaji { display: none; } }
+
+  .pc.blind { --ink-c: var(--blind);
+    background: var(--grain), linear-gradient(158deg, #faf8f3, #eeeae2);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), 0 0 0 .5px rgba(var(--sh), .14), 0 1px 2px rgba(var(--sh), .08); }
+  .pc.blind .pc-rank, .pc.blind .pc-kanji, .pc.blind .kj, .pc.blind .mini-kj { text-shadow: var(--blind-txt); }
+  .pc.blind .suit { filter: var(--blind-svg); }
+  .pc.blind .pc-romaji { visibility: hidden; }
+  .pc.blind .pc-face::before { box-shadow: -1px -1px 0 #fff, 1px 1px 0 rgba(var(--sh), .1), inset 1px 1px 0 rgba(255, 255, 255, .9), inset -1px -1px 0 rgba(var(--sh), .06); }
+
+  .pc.mini { width: var(--mw, 44px); flex: none;
+    box-shadow: inset 0 1px 0 #fff, 0 0 0 .5px rgba(var(--sh), .22), 0 1px 1px rgba(var(--sh), .1), 0 5px 10px -5px rgba(var(--sh), .35); }
+  .pc.mini .pc-face { font-size: 26cqw; }
+  .pc.mini .pc-face::before { display: none; }
+  .pc.mini .pc-idx { top: 7%; left: 4%; width: 30%; }
+  .pc.mini .pc-rank { font-size: 1.1em; }
+  .mini-kj { position: absolute; right: 13%; top: 50%; transform: translateY(-50%); writing-mode: vertical-rl; text-orientation: upright;
+    font: 800 .8em/1 var(--f-jp); letter-spacing: .08em; text-shadow: var(--emb); }
+  .pc.mini.sm { --mw: 30px; }
+  .pc.mini.sm .mini-kj { display: none; }
+
+  /* ---------- Sheets ---------- */
+  .backdrop { position: fixed; inset: 0; z-index: 20; display: none; align-items: flex-end; justify-content: center;
+    background: rgba(40, 32, 22, .24); -webkit-backdrop-filter: blur(10px) saturate(.85); backdrop-filter: blur(10px) saturate(.85); }
+  .backdrop.show { display: flex; animation: fadeIn .3s ease both; }
+  .sheet { position: relative; width: 100%; max-width: 940px; max-height: 94vh; max-height: 94dvh; overflow: auto; overscroll-behavior: contain;
+    padding: 14px clamp(20px, 4.5vw, 56px) calc(30px + env(safe-area-inset-bottom));
+    background-color: var(--paper); background-image: var(--grain); border-radius: 28px 28px 0 0;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), 0 -30px 80px -30px rgba(var(--sh), .45);
+    animation: rise .55s var(--ease) both; }
+  .sheet::before { content: ""; display: block; width: 38px; height: 4px; margin: 0 auto 24px; border-radius: 2px; background: var(--rule); }
+  .sheet.center { width: calc(100% - 32px); max-width: 500px; margin: auto; border-radius: 28px; padding-top: 40px; }
+  .sheet.center::before { display: none; }
+  @keyframes rise { from { transform: translateY(56px); opacity: 0; } }
+  @keyframes fadeIn { from { opacity: 0; } }
+
+  .sheet-head { display: flex; align-items: flex-start; gap: 20px; }
+  .grow { flex: 1; min-width: 0; }
+  .sheet-title { margin-top: 12px; font: 400 clamp(40px, 6.4vw, 60px)/.92 var(--f-display); letter-spacing: -.012em; }
+  .sheet.picker .sheet-title { font-size: clamp(38px, 5vw, 52px); }
+  .sheet-title .of { color: var(--ink-4); }
+  .sheet-title .suit { font-size: .6em; vertical-align: .04em; margin-left: .04em; }
+  .head-btns { display: flex; align-items: center; gap: 10px; flex: none; }
+  .close { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; color: var(--ink-2);
+    box-shadow: inset 0 0 0 1px var(--rule); transition: color .2s, box-shadow .2s; }
+  .close:hover { color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+  .close svg { width: 14px; height: 14px; }
+  .textbtn { height: 44px; padding: 0 18px; border-radius: 999px; font-weight: 500; font-size: 14px; color: var(--ink-2);
+    box-shadow: inset 0 0 0 1px var(--rule); transition: color .2s, box-shadow .2s; }
+  .textbtn:hover { color: var(--shu); box-shadow: inset 0 0 0 1px var(--shu); }
+
+  /* ---------- Picker ---------- */
+  .pk-title-row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px 24px; }
+  .pk-progress { display: flex; gap: 8px; padding-bottom: 10px; }
+  .pg { position: relative; width: 30px; }
+  .pg-empty { display: block; width: 30px; aspect-ratio: 5 / 7; border-radius: 7% / 5%;
+    box-shadow: inset 0 1px 2px rgba(var(--sh), .16), inset 0 0 0 .5px rgba(var(--sh), .13); }
+  .pg.cur::after { content: ""; position: absolute; left: 3px; right: 3px; bottom: -9px; height: 2px; border-radius: 1px; background: var(--shu); }
+
+  .pk-sec { margin-top: clamp(22px, 3vw, 30px); }
+  .pk-sec-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding-top: 14px;
+    border-top: 1px solid var(--rule); font: 500 11px/1 var(--f-body); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+  .pk-sec-head .num { margin-right: 12px; font: 400 11px/1 var(--f-mono); letter-spacing: 0; color: var(--ink-4); }
+
+  .decks { display: grid; grid-template-columns: 1fr 1fr; gap: 10px clamp(16px, 5vw, 64px); margin-top: 16px; }
+  .dgroup-head { display: inline-flex; align-items: center; gap: 9px; height: 34px; padding-right: 6px;
+    font: 500 12px/1 var(--f-body); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); transition: color .2s; }
+  .dgroup-head .sw { width: 9px; height: 9px; border-radius: 50%; background: var(--ink); }
+  .dgroup.red .dgroup-head .sw { background: var(--shu); }
+  .dgroup-head .note { font-size: 13px; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--ink-4); }
+  .dgroup-head:hover, .dgroup-head.sel { color: var(--ink); }
+  .dgroup-head.sel .note { color: var(--ink-3); }
+  .dgroup-decks { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(6px, 2vw, 22px); }
+
+  .deck { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 0 4px; text-align: center; transition: opacity .3s; }
+  .deck:disabled { opacity: .5; }
+  .decks:has(.deck.sel) .deck:not(.sel):not(:disabled) { opacity: .62; }
+  .decks:has(.deck.sel) .deck:not(.sel):not(:disabled):hover { opacity: 1; }
+  .deck:focus-visible { outline-offset: 2px; }
+  .deck-fan { position: relative; width: 100%; max-width: 120px; aspect-ratio: 1 / .9; }
+  .deck-fan .pc { position: absolute; left: 26%; bottom: 3%; width: 48%; transform-origin: 50% 165%; transition: transform .5s var(--ease), box-shadow .5s var(--ease); }
+  .deck-fan .pc-face { font-size: 20cqw; }
+  .deck-fan .pc-face::before { inset: 7%; }
+  .deck-fan .pc-idx { top: 7%; left: 6%; width: 24%; }
+  .deck-fan .pc-idx .suit { width: .7em; height: .7em; }
+  .dk-l { transform: rotate(-13deg); }
+  .dk-r { transform: rotate(13deg); }
+  .dk-c { z-index: 1; }
+  .dk-kj { font: 800 .72em/1 var(--f-jp); text-shadow: var(--emb); }
+  .dk-emblem { position: absolute; inset: 0; display: grid; place-items: center; }
+  .dk-emblem .suit { width: 2.3em; height: 2.3em; filter: var(--emb-svg); }
+  .pc.blind .dk-kj { text-shadow: var(--blind-txt); }
+  .deck:not(.sel):not(:disabled):hover .dk-l { transform: rotate(-18deg); }
+  .deck:not(.sel):not(:disabled):hover .dk-r { transform: rotate(18deg); }
+  .deck:not(.sel):not(:disabled):hover .dk-c { transform: translateY(-4%); }
+  .deck.sel .dk-l { transform: rotate(-21deg); }
+  .deck.sel .dk-r { transform: rotate(21deg); }
+  .deck.sel .dk-c { transform: translateY(-8%); box-shadow: var(--lift); }
+  .deck.just .dk-l { animation: dkL .55s var(--ease) both; }
+  .deck.just .dk-r { animation: dkR .55s var(--ease) both; }
+  .deck.just .dk-c { animation: dkC .55s var(--ease) both; }
+  @keyframes dkL { from { transform: rotate(-13deg); } }
+  @keyframes dkR { from { transform: rotate(13deg); } }
+  @keyframes dkC { from { transform: none; } }
+  .deck-name { margin-top: 12px; font-weight: 500; font-size: 15px; }
+  .deck-meta { font: 400 11px/1.4 var(--f-mono); color: var(--ink-3); }
+  .deck-meta::after { content: ""; display: block; width: 5px; height: 5px; margin: 8px auto 0; border-radius: 50%; background: transparent; transition: background .3s; }
+  .deck.sel .deck-meta::after { background: var(--shu); }
+
+  .fan { position: relative; width: 100%; height: 240px; margin-top: 6px; }
+  .fan-card { position: absolute; top: var(--top, 24px); left: calc(50% - var(--cw, 64px) / 2); width: var(--cw, 64px);
+    aspect-ratio: 5 / 7; border-radius: 7% / 5%;
+    transform-origin: 50% var(--pivot, 400px); transform: rotate(var(--rot, 0deg)) translateY(0);
+    transition: transform .7s var(--ease); }
+  .fan.stacked .fan-card { transform: rotate(0deg) translateY(16px); }
+  .fan.opening .fan-card { transition-delay: calc(var(--i) * 22ms); }
+  .fan-card .pc { transition: transform .28s var(--ease), box-shadow .28s var(--ease); }
+  .fan-card .pc-face { font-size: 19cqw; }
+  .fan-card .pc-face::before, .fan-card .pc-art { inset: 6% 7% 6% 27%; }
+  .fan-card .pc.court .pc-face::after { inset: calc(6% + .24em) calc(7% + .24em) calc(6% + .24em) calc(27% + .24em); }
+  .fan-card .pc-idx { top: 5%; left: 2%; width: 23%; gap: .14em; }
+  .fan-card .pc-idx.br { display: none; }
+  .fan-card .pc-idx .kj { display: block; margin-top: .22em; writing-mode: vertical-rl; text-orientation: upright;
+    font: 800 .6em/1 var(--f-jp); letter-spacing: .06em; text-shadow: var(--emb); }
+  .fan-card .pc-kanji { font-size: 1.3em; }
+  .fan-card:not(:disabled):hover .pc, .fan-card:focus-visible .pc { transform: translateY(-16%); box-shadow: var(--lift); }
+  .fan-card:focus-visible { outline: none; }
+  .fan-card:focus-visible .pc { outline: 1.5px solid var(--ink); outline-offset: 3px; }
+  .fan-card.cur .pc { transform: translateY(-16%); box-shadow: var(--lift), 0 0 0 1.5px var(--shu); }
+
+  .fan-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; height: 240px; margin-top: 6px;
+    border-radius: 22px; text-align: center; background: rgba(var(--sh), .03);
+    box-shadow: inset 0 1px 3px rgba(var(--sh), .13), inset 0 0 0 .5px rgba(var(--sh), .1), 0 1px 0 rgba(255, 255, 255, .8); }
+  .fe-title { font: 400 clamp(30px, 4vw, 38px)/1 var(--f-display); color: var(--ink-2); }
+  .fe-sub { font-size: 13px; color: var(--ink-3); }
+
+  .fan-cap { min-height: 20px; margin-top: 16px; text-align: center; font: 400 12px/1.5 var(--f-mono); color: var(--ink-3); }
+  .fan-cap b { font-weight: 400; color: var(--ink); }
+  .fan-cap [lang="ja"] { font: 800 13px/1 var(--f-jp); color: var(--ink); letter-spacing: .06em; }
+
+  .keys { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 26px; margin-top: 20px; padding-top: 16px;
+    border-top: 1px solid var(--rule-2); font: 400 11px/1 var(--f-mono); color: var(--ink-3); }
+  kbd { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; margin-right: 3px; border-radius: 5px;
+    font: 400 10.5px/1 var(--f-mono); color: var(--ink-2); background: linear-gradient(var(--card-hi), var(--card-lo));
+    box-shadow: inset 0 1px 0 #fff, 0 0 0 .5px rgba(var(--sh), .24), 0 1px 1px rgba(var(--sh), .16); }
+  @media (hover: none) { .keys { display: none; } }
+
+  /* ---------- Card actions ---------- */
+  .ah { align-items: flex-end; gap: clamp(18px, 3vw, 32px); }
+  .ah-card { flex: none; width: clamp(88px, 15vw, 124px); }
+  .ah .sheet-title { font-size: clamp(34px, 5.4vw, 52px); }
+  .ah-name { margin-top: 14px; font: 400 11px/1.4 var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+  .ah-name [lang="ja"] { margin-right: 10px; font: 800 15px/1 var(--f-jp); letter-spacing: .12em; color: var(--ink); }
+  .ah .close { align-self: flex-start; }
+  .reason { margin-top: 24px; padding: 12px 16px; border-radius: 12px; background: rgba(192, 57, 43, .07); color: var(--shu); font-size: 14px; }
+  .acts { margin-top: clamp(24px, 3.5vw, 36px); border-top: 1px solid var(--rule); }
+  .act { display: flex; justify-content: space-between; align-items: center; gap: 20px; width: 100%; padding: 20px 4px;
+    border-bottom: 1px solid var(--rule); text-align: left; transition: background .25s; }
+  .act:hover:not(:disabled) { background: rgba(var(--sh), .04); }
+  .act-t { display: block; font-weight: 500; font-size: 17px; }
+  .act small { display: block; margin-top: 5px; font-size: 13px; color: var(--ink-3); }
+  .act .out { flex: none; font: 300 21px/1 var(--f-mono); letter-spacing: -.03em; white-space: nowrap; }
+  .act .out.dmg { color: var(--shu); }
+  .act .out.heal { color: var(--moss); }
+  .act .out.zero { color: var(--ink-3); }
+  .act.rec:not(:disabled) .act-t::after { content: "Suggested"; display: inline-block; margin-left: 12px; padding: 4px 8px; border-radius: 999px;
+    font: 500 9.5px/1 var(--f-body); letter-spacing: .14em; text-transform: uppercase; vertical-align: 3px;
+    color: var(--shu); box-shadow: inset 0 0 0 1px rgba(192, 57, 43, .35); }
+  .act:disabled { color: var(--ink-4); }
+  .act:disabled small, .act:disabled .out { color: var(--ink-4); }
+
+  /* ---------- Game over ---------- */
   .over { text-align: center; }
-  .over .big { font-size: 54px; }
-  .over .score { font-size: 42px; font-weight: 900; margin: 6px 0; }
-  .rules { font-size: 14px; line-height: 1.5; }
-  .rules h4 { margin: 12px 0 4px; color: var(--gold); }
-  .rules ul { margin: 0; padding-left: 20px; }
-  kbd { background: var(--panel2); border-radius: 4px; padding: 0 5px; font-size: 12px; }
+  .over .seal { font-size: 26px; margin: 0; }
+  .over-title { margin-top: 28px; font: 400 clamp(36px, 7vw, 48px)/1 var(--f-display); }
+  .score { margin-top: 26px; font: 200 clamp(88px, 22vw, 132px)/.85 var(--f-mono); font-stretch: 87.5%; letter-spacing: -.06em; }
+  .over > .label { display: block; margin-top: 14px; }
+  .over-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 30px 0 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  .over-stats div { padding: 14px 0; }
+  .over-stats div + div { border-left: 1px solid var(--rule-2); }
+  .over-stats dt { font: 500 9.5px/1 var(--f-body); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
+  .over-stats dd { margin: 9px 0 0; font: 300 18px/1 var(--f-mono); }
+  .over .actions { margin-top: 28px; }
+  .over .actions .btn { flex: 1; padding: 0 16px; }
+
+  /* ---------- Rules ---------- */
+  .rules { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 clamp(28px, 5vw, 64px); margin-top: 26px; }
+  .rules section { padding: 20px 0 14px; border-top: 1px solid var(--rule); }
+  .rules h4 { margin-bottom: 10px; font: 400 28px/1 var(--f-display); }
+  .rules ul { margin: 0; padding: 0; list-style: none; }
+  .rules li { padding: 5px 0; font-size: 14.5px; line-height: 1.5; color: var(--ink-2); }
+  .rules li b { color: var(--ink); }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 900px) {
+    .stats { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .stat:nth-child(2) { padding-right: 0; }
+    .stat.stat-dungeon { grid-column: 1 / -1; padding-left: 0; border-left: 0; border-top: 1px solid var(--rule); }
+    .lower { grid-template-columns: minmax(0, 1fr); }
+    .lower .fold + .fold { border-top: 1px solid var(--rule); }
+  }
+  @media (max-width: 600px) {
+    body { font-size: 14px; }
+    .mast { padding: 34px 0 40px; }
+    .tagline { font-size: 14px; }
+    .nav .wide { display: none; }
+    .stat { padding: 22px 16px 24px; }
+    .hp { margin-top: 18px; }
+    .weapon { gap: 14px; min-height: 64px; }
+    .wstack .pc { --mw: 44px; }
+    .wstack .pc + .pc { margin-left: -29px; }
+    .dstats { gap: 10px; }
+    .dstats .l { font-size: 11px; }
+    .room-head { flex-direction: column; align-items: flex-start; }
+    .status { gap: 22px; }
+    .cap { justify-content: flex-start; font-size: 11px; }
+    .cap .role { display: none; }
+    .slot.carried::before { letter-spacing: .1em; font-size: 9px; }
+    .guide { font-size: 15px; }
+    .actions { width: 100%; }
+    .actions .btn { flex: 1; padding: 0 14px; }
+    .sheet { border-radius: 22px 22px 0 0; }
+    .dgroup-head .note { display: none; }
+    .deck-name { font-size: 13px; margin-top: 8px; }
+    .deck-meta { font-size: 10px; }
+    .rules { grid-template-columns: minmax(0, 1fr); }
+    .act { padding: 18px 2px; }
+    .act-t { font-size: 16px; }
+    .act.rec:not(:disabled) .act-t::after { display: none; }
+    .act.rec:not(:disabled) .out { text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 1px; }
+  }
+  @media (max-width: 360px) {
+    .slots { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 1ms !important; transition-delay: 0ms !important; }
+  }
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="s-S" viewBox="0 0 24 24"><path d="M12 2.2c.9 2.1 3.6 4.6 5.9 6.9 1.9 1.9 3.3 3.6 3.3 5.7 0 2.5-1.9 4.3-4.3 4.3-1.5 0-2.8-.7-3.6-1.8.2 1.9 1 3.4 2.4 4.5H8.3c1.4-1.1 2.2-2.6 2.4-4.5-.8 1.1-2.1 1.8-3.6 1.8-2.4 0-4.3-1.8-4.3-4.3 0-2.1 1.4-3.8 3.3-5.7C8.4 6.8 11.1 4.3 12 2.2z"/></symbol>
+  <symbol id="s-C" viewBox="0 0 24 24"><circle cx="12" cy="7.1" r="4.3"/><circle cx="7.2" cy="13.9" r="4.3"/><circle cx="16.8" cy="13.9" r="4.3"/><circle cx="12" cy="12.2" r="2.6"/><path d="M12 9.5c.6 0 1 .4 1 1v1.8c0 3.6.8 6.8 2.9 9.5H8.1c2.1-2.7 2.9-5.9 2.9-9.5v-1.8c0-.6.4-1 1-1z"/></symbol>
+  <symbol id="s-H" viewBox="0 0 24 24"><path d="M12 21.3c-.5-1.5-2.4-3.4-4.6-5.6C5 13.3 2.8 11 2.8 8.1c0-2.7 2.1-4.8 4.7-4.8 1.9 0 3.6 1.1 4.5 2.8.9-1.7 2.6-2.8 4.5-2.8 2.6 0 4.7 2.1 4.7 4.8 0 2.9-2.2 5.2-4.6 7.6-2.2 2.2-4.1 4.1-4.6 5.6z"/></symbol>
+  <symbol id="s-D" viewBox="0 0 24 24"><path d="M12 1.8c1.6 3.2 4 6.6 6.8 10.2-2.8 3.6-5.2 7-6.8 10.2-1.6-3.2-4-6.6-6.8-10.2C8 8.4 10.4 5 12 1.8z"/></symbol>
+  <symbol id="i-sword" viewBox="0 0 16 16"><path d="M14.4 1.6 6.9 9.1M4.7 7.3l4 4M5.9 10.1 2 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-x" viewBox="0 0 16 16"><path d="M3 3l10 10M13 3 3 13" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></symbol>
+</svg>
+
 <div class="app">
-  <header>
-    <h1>SCOUNDREL<small id="roomLabel"></small></h1>
-    <button class="icon-btn" id="undoBtn" title="Undo (Ctrl+Z)">↶ Undo</button>
-    <button class="icon-btn" id="rulesBtn" title="Rules">?</button>
-    <button class="icon-btn" id="newBtn" title="New game">⟳</button>
+  <header class="top">
+    <div class="meta-row">
+      <span class="meta" id="roomLabel"></span>
+      <nav class="nav" aria-label="Game">
+        <button id="undoBtn" title="Undo (Ctrl+Z)">Undo</button>
+        <button id="rulesBtn" title="Rules">Rules</button>
+        <button id="newBtn" title="New game">New<span class="wide"> game</span></button>
+      </nav>
+    </div>
+    <div class="mast">
+      <h1 class="wordmark">Scoundrel<span class="seal" lang="ja" aria-hidden="true">悪党</span></h1>
+      <p class="tagline">A companion for playing Scoundrel with a real deck. You deal, it keeps count.</p>
+    </div>
   </header>
 
-  <div class="stats">
-    <section class="panel">
-      <div class="label">❤ Health</div>
-      <div class="hp-row"><div class="hp-num" id="hp"></div></div>
-      <div class="hp-bar"><div class="hp-fill" id="hpFill"></div></div>
-    </section>
-    <section class="panel">
-      <div class="label">⚔ Weapon</div>
+  <section class="stats" aria-label="Status">
+    <div class="stat">
+      <div class="label">Health</div>
+      <div class="hp" id="hp"></div>
+      <div class="ticks" id="hpTicks" aria-hidden="true"></div>
+    </div>
+    <div class="stat">
+      <div class="label">Weapon</div>
       <div class="weapon" id="weapon"></div>
-      <div class="hint" id="weaponHint"></div>
-    </section>
-  </div>
-
-  <section class="panel">
-    <div class="label">🂠 Dungeon</div>
-    <div class="dstats" id="dstats"></div>
+      <p class="hint" id="weaponHint"></p>
+    </div>
+    <div class="stat stat-dungeon">
+      <div class="label">Dungeon</div>
+      <div class="dstats" id="dstats"></div>
+    </div>
   </section>
 
-  <section class="panel">
+  <section class="room" aria-labelledby="roomTitle">
     <div class="room-head">
-      <h2 id="roomTitle"></h2>
-      <div class="chips" id="chips"></div>
+      <h2 class="room-title" id="roomTitle"></h2>
+      <div class="status" id="chips"></div>
     </div>
     <div class="slots" id="slots"></div>
-    <div class="actions">
-      <button class="btn danger" id="runBtn">🏃 Run away</button>
-      <button class="btn primary" id="nextBtn">Next room →</button>
+    <div class="room-foot">
+      <p class="guide" id="guide" aria-live="polite"></p>
+      <div class="actions">
+        <button class="btn" id="runBtn">Run away</button>
+        <button class="btn primary" id="nextBtn">Next room <span aria-hidden="true">→</span></button>
+      </div>
     </div>
-    <div class="guide" id="guide"></div>
   </section>
 
-  <details class="panel" id="deckDetails">
-    <summary>Dungeon cards <span class="label" id="deckSum"></span></summary>
-    <div class="grid44" id="grid44"></div>
-  </details>
-
-  <details class="panel" open>
-    <summary>Log</summary>
-    <div class="log" id="log"></div>
-  </details>
+  <div class="lower">
+    <details class="fold" id="deckDetails">
+      <summary><h2>The deck</h2><span class="meta" id="deckSum"></span></summary>
+      <div class="grid44" id="grid44"></div>
+    </details>
+    <details class="fold" open>
+      <summary><h2>Log</h2></summary>
+      <div class="log" id="log"></div>
+    </details>
+  </div>
 </div>
 
-<div class="backdrop" id="backdrop"><div class="sheet" id="sheet"></div></div>
-
+<div class="backdrop" id="backdrop"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 <script>
 (() => {
   'use strict';
@@ -245,8 +602,50 @@
   const roleOf = id => suitOf(id).role;
   const isRed = id => suitOf(id).color === 'red';
   const label = id => rankLabel(valueOf(id)) + suitOf(id).glyph;
-  const miniHTML = (id, sm) => `<span class="mini${sm ? ' sm' : ''}${isRed(id) ? ' red' : ''}">${label(id)}</span>`;
+  const miniHTML = (id, sm) => `<span class="pc mini${sm ? ' sm' : ''} ${isRed(id) ? 'red' : 'blk'}" role="img" aria-label="${fullName(id)}"><span class="pc-face"><span class="pc-idx"><span class="pc-rank">${rankLabel(valueOf(id))}</span>${suitSVG(id[0])}</span><span class="mini-kj" lang="ja">${NAMES[id][0]}</span></span></span>`;
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  // ---------- Presentation ----------
+  // Each dungeon card has its own kanji name. Clubs are beasts, spades are spirits,
+  // diamonds are blades, hearts are remedies. Higher values get fiercer (or stronger).
+  const NAMES = {
+    C2: ['鬼火', 'Onibi'], C3: ['河童', 'Kappa'], C4: ['鎌鼬', 'Kamaitachi'], C5: ['化猫', 'Bakeneko'],
+    C6: ['狒々', 'Hihi'], C7: ['百足', 'Mukade'], C8: ['牛鬼', 'Ushi-oni'], C9: ['火車', 'Kasha'],
+    C10: ['雷獣', 'Raijū'], C11: ['天狗', 'Tengu'], C12: ['妖狐', 'Yōko'], C13: ['大蛇', 'Orochi'], C14: ['龍王', 'Ryūō'],
+    S2: ['餓鬼', 'Gaki'], S3: ['幽霊', 'Yūrei'], S4: ['骸骨', 'Gaikotsu'], S5: ['山姥', 'Yamanba'],
+    S6: ['雪女', 'Yuki-onna'], S7: ['怨霊', 'Onryō'], S8: ['鬼婆', 'Onibaba'], S9: ['夜叉', 'Yasha'],
+    S10: ['羅刹', 'Rasetsu'], S11: ['修羅', 'Shura'], S12: ['般若', 'Hannya'], S13: ['閻魔', 'Enma'], S14: ['死神', 'Shinigami'],
+    D2: ['竹槍', 'Takeyari'], D3: ['木刀', 'Bokutō'], D4: ['短刀', 'Tantō'], D5: ['鎖鎌', 'Kusarigama'],
+    D6: ['脇差', 'Wakizashi'], D7: ['薙刀', 'Naginata'], D8: ['大弓', 'Daikyū'], D9: ['太刀', 'Tachi'], D10: ['名刀', 'Meitō'],
+    H2: ['朝露', 'Asatsuyu'], H3: ['薬草', 'Yakusō'], H4: ['清水', 'Shimizu'], H5: ['甘露', 'Kanro'],
+    H6: ['神酒', 'Miki'], H7: ['良薬', 'Ryōyaku'], H8: ['秘薬', 'Hiyaku'], H9: ['霊薬', 'Reiyaku'], H10: ['仙丹', 'Sentan'],
+  };
+  const SUIT_KANJI = { C: '獣', S: '霊', H: '薬', D: '刀' };
+  const RANK_NAME = { 11: 'Jack', 12: 'Queen', 13: 'King', 14: 'Ace' };
+  const GLYPH_SUIT = { '♣': 'C', '♠': 'S', '♥': 'H', '♦': 'D' };
+  const X_ICON = '<svg aria-hidden="true"><use href="#i-x"/></svg>';
+
+  const fullName = id => `${RANK_NAME[valueOf(id)] || valueOf(id)} of ${suitOf(id).name}`;
+  const suitSVG = su => `<svg class="suit" aria-hidden="true"><use href="#s-${su}"/></svg>`;
+  const inkSuit = su => `<span class="ink-${SUITS[su].color}">${suitSVG(su)}</span>`;
+  const labelHTML = id => `${rankLabel(valueOf(id))}${inkSuit(id[0])}`;
+  // escape, drop emoji, swap suit glyphs for the SVG suits
+  const decorate = t => esc(t).replace(/(?:☠|🏆)\uFE0F?\s*/gu, '').replace(/[♣♠♥♦]/g, g => inkSuit(GLYPH_SUIT[g]));
+
+  function cardHTML(id, o = {}) {
+    const v = valueOf(id), [kj, ro] = NAMES[id];
+    const idx = `<span class="pc-rank">${rankLabel(v)}</span>${suitSVG(id[0])}`;
+    return `<span class="pc ${isRed(id) ? 'red' : 'blk'}${v > 10 ? ' court' : ''}${o.blind ? ' blind' : ''}" aria-hidden="true"><span class="pc-face">`
+      + `<span class="pc-idx">${idx}<span class="kj" lang="ja">${kj}</span></span>`
+      + `<span class="pc-art"><span class="pc-kanji" lang="ja">${kj}</span><span class="pc-romaji">${ro}</span></span>`
+      + `<span class="pc-idx br">${idx}</span></span></span>`;
+  }
+  function outHTML(txt, resolved) {
+    if (txt === '✗') return 'discarded';
+    if (txt === '✓') return 'done';
+    if (txt === 'equip') return resolved ? 'equipped' : 'equip';
+    return esc(txt).replace(/\s?⚔/, '<svg class="ico" aria-hidden="true"><use href="#i-sword"/></svg><span class="vh"> with weapon</span>');
+  }
 
   // ---------- State ----------
   const KEY = 'scoundrel-tracker-v1';
@@ -434,108 +833,113 @@
     return ['equip', 'equip'];
   }
 
+  let dealt = []; // card id per slot at the previous render, so only newly dealt cards animate in
+
   function render() {
     const s = state;
-    $('roomLabel').textContent = `Room ${s.roomNo}`;
+    $('roomLabel').textContent = `Room ${String(s.roomNo).padStart(2, '0')}`;
     $('undoBtn').disabled = !history.length;
 
     // health
     const hp = Math.max(0, s.hp);
-    $('hp').innerHTML = `${hp}<span> / ${MAX_HP}</span>`;
+    $('hp').innerHTML = `<span class="hp-num">${hp}</span><span class="hp-max">/ ${MAX_HP}</span>`;
+    $('hp').setAttribute('aria-label', `Health ${hp} of ${MAX_HP}`);
     const pct = hp / MAX_HP * 100;
-    const fill = $('hpFill');
-    fill.style.width = pct + '%';
-    fill.className = 'hp-fill' + (pct > 60 ? ' ok' : pct > 30 ? ' mid' : '');
+    const ticks = $('hpTicks');
+    ticks.className = 'ticks' + (pct > 60 ? '' : pct > 30 ? ' mid' : ' low');
+    ticks.innerHTML = Array.from({ length: MAX_HP }, (_, i) => `<i${i < hp ? ' class="on"' : ''}></i>`).join('');
 
-    // weapon
+    // weapon: the weapon card with slain monsters stacked on top of it
     if (s.weapon) {
       const w = s.weapon;
-      $('weapon').innerHTML = miniHTML(w.card) +
-        (w.slain.length ? `<div><div class="label">slain</div><div class="slain">${w.slain.map(c => miniHTML(c, true)).join('')}</div></div>` : '');
-      $('weaponHint').textContent = w.slain.length
-        ? `Usable on monsters below ${valueOf(w.slain[w.slain.length - 1])}`
-        : `Fresh — usable on any monster (blocks ${valueOf(w.card)})`;
+      $('weapon').innerHTML = `<div class="wstack">${miniHTML(w.card)}${w.slain.map(c => miniHTML(c)).join('')}</div>` +
+        (w.slain.length ? `<div class="wslain"><span class="label">Slain</span><b>${w.slain.length}</b></div>` : '');
+      $('weaponHint').innerHTML = decorate(w.slain.length
+        ? `Usable on monsters below ${valueOf(w.slain[w.slain.length - 1])}.`
+        : `Fresh. Blocks ${valueOf(w.card)} damage from any monster.`);
     } else {
-      $('weapon').innerHTML = '<span class="none">Barehanded</span>';
-      $('weaponHint').textContent = 'Equip a ♦ to reduce monster damage';
+      $('weapon').innerHTML = '<span class="barehanded">Barehanded</span>';
+      $('weaponHint').innerHTML = decorate('Equip a ♦ to reduce monster damage.');
     }
 
     // dungeon stats
     const deck = ALL_CARDS.filter(id => isAvailable(id));
     const mons = deck.filter(id => roleOf(id) === 'monster');
     $('dstats').innerHTML = [
-      [dungeonLeft(), 'cards left'],
-      [mons.reduce((a, id) => a + valueOf(id), 0), `monster pts (${mons.length})`],
-      [deck.filter(id => roleOf(id) === 'potion').length, '♥ potions'],
-      [deck.filter(id => roleOf(id) === 'weapon').length, '♦ weapons'],
-    ].map(([n, l]) => `<div><b>${n}</b>${l}</div>`).join('');
-    $('deckSum').textContent = ` · ${s.used.length} used · ${dungeonLeft()} left`;
+      [dungeonLeft(), 'Cards left'],
+      [mons.reduce((a, id) => a + valueOf(id), 0), `Monster points<span class="sub">${mons.length} monsters</span>`],
+      [deck.filter(id => roleOf(id) === 'potion').length, `Potions ${inkSuit('H')}`],
+      [deck.filter(id => roleOf(id) === 'weapon').length, `Weapons ${inkSuit('D')}`],
+    ].map(([n, l]) => `<div><span class="n">${n}</span><span class="l">${l}</span></div>`).join('');
+    $('deckSum').textContent = `${s.used.length} used · ${dungeonLeft()} left`;
 
     // room
-    $('roomTitle').textContent = `Room ${s.roomNo}`;
-    const chips = [];
-    chips.push(`<span class="chip ${s.resolvedInRoom >= 3 ? 'on' : ''}">faced ${s.resolvedInRoom}/3</span>`);
-    chips.push(`<span class="chip ${s.potionUsedInRoom ? 'warn' : ''}">${s.potionUsedInRoom ? 'potion used' : 'potion ready'}</span>`);
-    chips.push(`<span class="chip ${s.ranLastRoom ? 'warn' : ''}">${s.ranLastRoom ? "can't run" : 'can run'}</span>`);
-    $('chips').innerHTML = chips.join('');
+    $('roomTitle').innerHTML = `Room <span class="no">${s.roomNo}</span>`;
+    $('chips').innerHTML = [
+      ['Faced', `${s.resolvedInRoom} of 3`, s.resolvedInRoom >= 3 ? 'on' : ''],
+      ['Potion', s.potionUsedInRoom ? 'Used' : 'Ready', s.potionUsedInRoom ? 'warn' : ''],
+      ['Run away', s.ranLastRoom ? 'Ran last room' : 'Available', s.ranLastRoom ? 'warn' : ''],
+    ].map(([k, v, c]) => `<div class="st ${c}"><span class="k">${k}</span><span class="v">${v}</span></div>`).join('');
 
     const need = slotsNeeded();
     const slotsEl = $('slots');
     slotsEl.innerHTML = '';
+    let fresh = 0;
     s.room.forEach((c, i) => {
       const b = document.createElement('button');
       if (!c) {
         const beyond = i >= need || s.resolvedInRoom > 0;
         b.className = 'slot empty' + (beyond ? ' disabled-slot' : '');
         b.disabled = beyond || !!s.over;
-        b.innerHTML = beyond ? '<span>—</span>' : '<span class="plus">+</span><span class="role">deal card</span>';
+        b.innerHTML = `<span class="well">${beyond ? '' : '<span class="plus">+</span><span class="lbl">Deal</span>'}</span><span class="cap"></span>`;
         b.setAttribute('aria-label', 'Deal card ' + (i + 1));
         b.onclick = () => openPicker(i);
       } else {
         const id = c.card;
-        b.className = `slot card${isRed(id) ? ' red' : ''}${c.resolved ? ' resolved' : ''}${c.carried && !c.resolved ? ' carried' : ''}`;
+        const isNew = dealt[i] !== id;
+        b.className = `slot card${c.resolved ? ' resolved' : ''}${c.carried && !c.resolved ? ' carried' : ''}${isNew ? ' deal-in' : ''}`;
+        if (isNew) b.style.setProperty('--d', fresh++);
         const [txt, cls] = c.resolved ? [c.note || '✓', 'zero'] : badgeFor(id);
-        b.innerHTML = `<span class="corner">${rankLabel(valueOf(id))}<br>${suitOf(id).glyph}</span>
-          <span class="big">${suitOf(id).glyph}</span>
-          <span class="role">${ROLE_LABEL[roleOf(id)]} · ${valueOf(id)}</span>
-          <span class="badge ${cls}">${esc(txt)}</span>`;
-        b.setAttribute('aria-label', `${label(id)} ${ROLE_LABEL[roleOf(id)]}`);
+        b.innerHTML = cardHTML(id, { blind: c.resolved }) +
+          `<span class="cap"><span class="role">${c.resolved ? 'Faced' : ROLE_LABEL[roleOf(id)] + ' ' + valueOf(id)}</span><span class="out ${cls}">${outHTML(txt, c.resolved)}</span></span>`;
+        b.setAttribute('aria-label', `${fullName(id)}, ${ROLE_LABEL[roleOf(id)]}${c.resolved ? ', faced' : ''}`);
         b.disabled = c.resolved || !!s.over;
         b.onclick = () => openActions(i);
       }
       slotsEl.appendChild(b);
     });
+    dealt = s.room.map(c => c && c.card);
 
     $('runBtn').disabled = !canRun();
     $('nextBtn').disabled = !roomDone();
 
     let g = '';
-    if (s.over) g = s.over.won ? '🏆 Dungeon cleared!' : '☠ You died.';
-    else if (!roomFull()) g = `Deal ${need - filledCount()} more card${need - filledCount() === 1 ? '' : 's'} — tap an empty slot.`;
-    else if (roomDone()) g = 'Room cleared. Tap "Next room" — the last card carries over.';
+    if (s.over) g = s.over.won ? 'Dungeon cleared.' : 'You died.';
+    else if (!roomFull()) g = `Deal ${need - filledCount()} more card${need - filledCount() === 1 ? '' : 's'}. Tap an empty slot.`;
+    else if (roomDone()) g = 'Room cleared. Tap "Next room" and the last card carries over.';
     else if (s.resolvedInRoom === 0) g = canRun() ? 'Tap a card to face it, or run away.' : 'Tap a card to face it.';
     else g = `Face ${3 - s.resolvedInRoom} more card${3 - s.resolvedInRoom === 1 ? '' : 's'}.`;
     if (!s.over && roomFull() && unresolved().length && s.resolvedInRoom < 3 && dungeonLeft() === 0 && unresolved().length <= 3 - s.resolvedInRoom)
-      g = 'Final room — face every card to escape!';
+      g = 'Final room. Face every card to escape.';
     $('guide').textContent = g;
 
     // grid of 44
     const inRoom = inRoomIds();
     let gh = '';
     SUIT_ORDER.forEach(su => {
-      gh += `<div class="sh" style="color:${SUITS[su].color === 'red' ? 'var(--red)' : 'var(--black)'}">${SUITS[su].glyph}</div>`;
+      gh += `<div class="sh">${inkSuit(su)}</div>`;
       RANKS.forEach(r => {
         const id = su + r;
         if (!inDungeon(su, r)) { gh += '<div class="cell na"></div>'; return; }
         const used = s.used.includes(id) || (inRoom.includes(id) && s.room.find(c => c && c.card === id).resolved);
-        gh += `<div class="cell${isRed(id) ? ' red' : ''}${used ? ' used' : ''}${inRoom.includes(id) ? ' inroom' : ''}">${rankLabel(r)}</div>`;
+        gh += `<div class="cell${isRed(id) ? ' red' : ''}${used ? ' used' : ''}${inRoom.includes(id) ? ' inroom' : ''}" title="${fullName(id)} · ${NAMES[id][1]}">${rankLabel(r)}</div>`;
       });
     });
     $('grid44').innerHTML = gh;
 
     // log
     $('log').innerHTML = s.log.slice().reverse()
-      .map(l => `<div class="${l.kind}"><span class="r">R${l.room}</span>${esc(l.text)}</div>`).join('');
+      .map(l => `<div class="${l.kind}"><span class="r">R${String(l.room).padStart(2, '0')}</span><span class="t">${decorate(l.text)}</span></div>`).join('');
 
     if (s.over && !sheetOpen()) openGameOver();
   }
@@ -544,8 +948,8 @@
   const backdrop = $('backdrop'), sheet = $('sheet');
   let picker = null; // { slot, suit, color, except }
   const sheetOpen = () => backdrop.classList.contains('show');
-  function showSheet(html, center) {
-    sheet.className = 'sheet' + (center ? ' center' : '');
+  function showSheet(html, center, kind) {
+    sheet.className = 'sheet' + (center ? ' center' : '') + (kind ? ' ' + kind : '');
     sheet.innerHTML = html;
     backdrop.classList.add('show');
   }
@@ -566,47 +970,113 @@
     renderPicker();
   }
 
+  // Suit decks on top; picking one fans its cards out below.
   function renderPicker() {
     const p = picker;
     const need = slotsNeeded();
-    const title = p.except ? `Change ${label(p.except)}` : `Deal card ${p.slot + 1} of ${need}`;
-    const suitOpts = SUIT_ORDER.map(su => {
+    const animate = !!p.suit && p.fanned !== p.suit; // only fan out when a new suit is chosen
+    p.fanned = p.suit;
+    const title = p.except ? `Change ${labelHTML(p.except)}` : `Card ${p.slot + 1} <span class="of">of ${need}</span>`;
+    const progress = state.room.slice(0, Math.max(need, p.slot + 1)).map((c, i) =>
+      `<span class="pg${i === p.slot ? ' cur' : ''}">${c ? miniHTML(c.card, true) : '<span class="pg-empty"></span>'}</span>`).join('');
+
+    const deckHTML = su => {
       const S = SUITS[su];
       const left = ALL_CARDS.filter(id => id[0] === su && isAvailable(id, p.except)).length;
-      const dis = (p.color && S.color !== p.color) || !left;
-      return `<button class="opt${p.suit === su ? ' sel' : ''}" data-suit="${su}" ${dis ? 'disabled' : ''}>
-        <span class="g ${S.color === 'red' ? 'red' : 'blk'}">${S.glyph}</span>
-        <span>${S.name}<small>${ROLE_LABEL[S.role]} · ${left} left</small></span></button>`;
-    }).join('');
-    const colorOpts = [['black', 'Black', '#222'], ['red', 'Red', '#c62828']].map(([k, n, sw]) =>
-      `<button class="opt${p.color === k ? ' sel' : ''}" data-color="${k}">
-        <span class="swatch" style="background:${sw}"></span><span>${n}<small>${k === 'black' ? 'Monsters' : 'Potions / Weapons'}</small></span></button>`).join('');
-    let rankOpts = '';
-    RANKS.forEach(r => {
-      const id = p.suit ? p.suit + r : null;
-      const ok = id && inDungeon(p.suit, r) && isAvailable(id, p.except);
-      if (p.suit && !inDungeon(p.suit, r)) return; // hide ranks that don't exist for this suit
-      rankOpts += `<button class="rank${p.color === 'red' ? ' red' : ''}${id === p.except ? ' cur' : ''}" data-rank="${r}" ${ok ? '' : 'disabled'}>${rankLabel(r)}</button>`;
-    });
+      // a color filter narrows the decks until a suit is picked; after that, any deck is one tap away
+      const dis = (!p.suit && p.color && S.color !== p.color) || !left;
+      const sel = p.suit === su;
+      const n = Math.max(1, Math.min(3, left)); // the fan thins out as the suit runs low
+      const cls = `pc ${S.color === 'red' ? 'red' : 'blk'}${left ? '' : ' blind'} dk`;
+      const back = side => `<span class="${cls} dk-${side}"><span class="pc-face"><span class="pc-idx">${suitSVG(su)}</span></span></span>`;
+      return `<button class="deck${sel ? ' sel' : ''}${sel && animate ? ' just' : ''}" data-suit="${su}" aria-pressed="${sel}" ${dis ? 'disabled' : ''}>
+        <span class="deck-fan">${n > 1 ? back('l') : ''}${n > 2 ? back('r') : ''}<span class="${cls} dk-c"><span class="pc-face"><span class="pc-idx"><span class="dk-kj" lang="ja">${SUIT_KANJI[su]}</span></span><span class="dk-emblem">${suitSVG(su)}</span></span></span></span>
+        <span class="deck-name">${S.name}</span>
+        <span class="deck-meta">${ROLE_LABEL[S.role]} · ${left} left</span></button>`;
+    };
+    const groupHTML = (col, name, note) => `<div class="dgroup ${col}">
+        <button class="dgroup-head${p.color === col ? ' sel' : ''}" data-color="${col}" aria-pressed="${p.color === col}"><span class="sw"></span>${name}<span class="note">${note}</span></button>
+        <div class="dgroup-decks">${SUIT_ORDER.filter(su => SUITS[su].color === col).map(deckHTML).join('')}</div></div>`;
+
+    const fan = p.suit
+      ? `<div class="fan${animate ? ' stacked' : ''}" role="group" aria-label="${SUITS[p.suit].name}">` + RANKS.filter(r => inDungeon(p.suit, r)).map((r, i) => {
+          const id = p.suit + r;
+          const ok = isAvailable(id, p.except);
+          return `<button class="fan-card${id === p.except ? ' cur' : ''}" data-rank="${r}" style="--i:${i}" aria-label="${fullName(id)}${ok ? '' : ', already out'}" ${ok ? '' : 'disabled'}>${cardHTML(id, { blind: !ok })}</button>`;
+        }).join('') + '</div>'
+      : `<div class="fan-empty"><span class="fe-title">Choose a suit</span><span class="fe-sub">${p.color ? `Pick one of the ${p.color} decks.` : 'Its cards fan out here.'}</span></div>`;
+    const capDefault = p.suit ? 'Tap the card you dealt. Cards without ink are already out of play.' : 'Pick a suit, or a color to narrow the decks.';
+
     showSheet(`
-      <div class="sheet-head"><h3>${title}</h3>
-        <div style="display:flex;gap:8px">
-          ${p.except && state.resolvedInRoom === 0 ? '<button class="icon-btn" data-remove="1">Remove</button>' : ''}
-          <button class="icon-btn" data-close="1">✕</button></div></div>
-      <div class="picker">
-        <div class="col"><h4 class="${p.suit ? 'done' : ''}"><span class="n">1</span>Suit</h4>${suitOpts}</div>
-        <div class="col"><h4 class="${p.color ? 'done' : ''}"><span class="n">2</span>Color</h4>${colorOpts}</div>
-        <div class="col col-rank"><h4><span class="n">3</span>Rank</h4><div class="ranks">${rankOpts}</div>
-          <div class="pick-hint">${p.suit ? 'Tap a rank to place the card. Crossed-out = already seen.' : 'Pick a suit first (or a color to narrow suits).'}</div></div>
-      </div>
-      <div class="pick-hint" style="margin-top:10px">Keys: <kbd>c</kbd><kbd>s</kbd><kbd>h</kbd><kbd>d</kbd> suit · <kbd>b</kbd><kbd>r</kbd> color · <kbd>2</kbd>–<kbd>9</kbd> <kbd>0</kbd>=10 <kbd>j</kbd><kbd>q</kbd><kbd>k</kbd><kbd>a</kbd> rank</div>`);
+      <div class="sheet-head">
+        <div class="grow"><div class="eyebrow">${p.except ? 'Change card' : 'Deal'}</div>
+          <div class="pk-title-row"><h3 class="sheet-title">${title}</h3><div class="pk-progress" aria-hidden="true">${progress}</div></div></div>
+        <div class="head-btns">
+          ${p.except && state.resolvedInRoom === 0 ? '<button class="textbtn" data-remove="1">Remove</button>' : ''}
+          <button class="close" data-close="1" aria-label="Close">${X_ICON}</button></div></div>
+      <section class="pk-sec">
+        <div class="pk-sec-head"><span><span class="num">01</span>Suit</span></div>
+        <div class="decks">${groupHTML('black', 'Black', 'Monsters')}${groupHTML('red', 'Red', 'Potions, weapons')}</div>
+      </section>
+      <section class="pk-sec">
+        <div class="pk-sec-head"><span><span class="num">02</span>Card</span>${p.suit ? `<span>${SUITS[p.suit].name}</span>` : ''}</div>
+        ${fan}
+        <p class="fan-cap" id="fanCap">${capDefault}</p>
+      </section>
+      <div class="keys"><span><kbd>c</kbd><kbd>s</kbd><kbd>h</kbd><kbd>d</kbd> suit</span><span><kbd>b</kbd><kbd>r</kbd> color</span><span><kbd>2</kbd>–<kbd>9</kbd> <kbd>0</kbd> <kbd>j</kbd><kbd>q</kbd><kbd>k</kbd><kbd>a</kbd> card</span><span><kbd>esc</kbd> close</span></div>`, false, 'picker');
     sheet.querySelectorAll('[data-suit]').forEach(b => b.onclick = () => pickSuit(b.dataset.suit));
     sheet.querySelectorAll('[data-color]').forEach(b => b.onclick = () => pickColor(b.dataset.color));
-    sheet.querySelectorAll('[data-rank]').forEach(b => b.onclick = () => pickRank(+b.dataset.rank));
+    const cap = $('fanCap');
+    sheet.querySelectorAll('[data-rank]').forEach(b => {
+      b.onclick = () => pickRank(+b.dataset.rank);
+      const id = p.suit + b.dataset.rank;
+      const show = () => { cap.innerHTML = `<b>${fullName(id)}</b> · <span lang="ja">${NAMES[id][0]}</span> ${NAMES[id][1]} · ${ROLE_LABEL[roleOf(id)]} ${valueOf(id)}`; };
+      const hide = () => { cap.textContent = capDefault; };
+      b.addEventListener('mouseenter', show); b.addEventListener('focus', show);
+      b.addEventListener('mouseleave', hide); b.addEventListener('blur', hide);
+    });
     sheet.querySelector('[data-close]').onclick = closeSheet;
     const rm = sheet.querySelector('[data-remove]');
     if (rm) rm.onclick = () => { const sl = picker.slot; closeSheet(); removeCard(sl); };
+    layoutFan(animate);
   }
+
+  // The fanned cards hang from one pivot below the fan, like a hand of cards.
+  // The arc is sized so the whole suit spans the sheet and every index stays tappable.
+  function fanGeometry(width, n) {
+    const span = Math.min(width, 720);
+    const cw = Math.round(Math.min(n > 9 ? 100 : 108, Math.max(52, (window.innerHeight - 560) * 0.55), Math.max(52, span * (n > 9 ? 0.15 : 0.19))));
+    const ch = cw * 1.4;
+    const half = (n > 9 ? 2 : 2.2) * Math.max(1, n - 1) * Math.PI / 180;
+    const pivot = (span - cw * Math.cos(half)) / (2 * Math.sin(half));
+    const low = (cw / 2) * Math.sin(half) + (ch - pivot) * Math.cos(half) + pivot; // lowest corner, measured from the middle card's top
+    return { cw, half, pivot, lift: Math.ceil(ch * 0.16) + 8, depth: Math.ceil(Math.max(ch, low)) + 10 };
+  }
+  function layoutFan(animate) {
+    const fan = sheet.querySelector('.fan, .fan-empty');
+    if (!fan) return;
+    const width = fan.clientWidth;
+    // same height for every suit (and the empty state) so the sheet never jumps
+    const tallest = Math.max(...[13, 9].map(n => { const g = fanGeometry(width, n); return g.lift + g.depth; }));
+    fan.style.height = tallest + 'px';
+    const cards = [...fan.querySelectorAll('.fan-card')];
+    if (!cards.length) return;
+    const n = cards.length, g = fanGeometry(width, n);
+    fan.style.setProperty('--cw', g.cw + 'px');
+    fan.style.setProperty('--pivot', g.pivot.toFixed(1) + 'px');
+    fan.style.setProperty('--top', (g.lift + (tallest - g.lift - g.depth) / 2).toFixed(1) + 'px');
+    cards.forEach((c, i) => c.style.setProperty('--rot', (n > 1 ? (2 * i / (n - 1) - 1) * g.half * 180 / Math.PI : 0).toFixed(2) + 'deg'));
+    if (animate) {
+      fan.getBoundingClientRect(); // commit the stacked pose before fanning out
+      requestAnimationFrame(() => {
+        fan.classList.remove('stacked');
+        fan.classList.add('opening');
+        setTimeout(() => fan.classList.remove('opening'), 1200);
+      });
+    }
+  }
+  window.addEventListener('resize', () => { if (picker) layoutFan(false); });
+
   function pickSuit(su) {
     if (!picker) return;
     picker.suit = su; picker.color = SUITS[su].color;
@@ -639,72 +1109,85 @@
     const blocked = !canResolve();
     let reason = '';
     if (!roomFull()) reason = 'Deal the rest of the room first.';
-    else if (state.resolvedInRoom >= 3) reason = 'You already faced 3 cards — go to the next room.';
+    else if (state.resolvedInRoom >= 3) reason = 'You already faced 3 cards. Go to the next room.';
 
     if (role === 'monster') {
       if (state.weapon) {
         const usable = weaponUsableOn(v);
         const d = usable ? weaponDamage(v) : null;
         const last = state.weapon.slain[state.weapon.slain.length - 1];
-        acts.push({ how: 'weapon', rec: usable && d < v, text: `⚔ Fight with ${label(state.weapon.card)}`,
-          sub: usable ? 'Monster is stacked on your weapon' : `Weapon too worn — only monsters below ${valueOf(last)}`,
+        acts.push({ how: 'weapon', rec: usable && d < v, text: `Fight with ${label(state.weapon.card)}`,
+          sub: usable ? 'Monster is stacked on your weapon' : `Weapon too worn. Only monsters below ${valueOf(last)}`,
           out: usable ? (d ? `−${d} HP` : 'no damage') : '', cls: usable && d ? 'dmg' : 'zero', dis: !usable });
       }
-      acts.push({ how: 'bare', text: '✊ Fight barehanded', sub: state.weapon ? 'Keeps your weapon fresh' : 'No weapon equipped',
+      acts.push({ how: 'bare', text: 'Fight barehanded', sub: state.weapon ? 'Keeps your weapon fresh' : 'No weapon equipped',
         out: `−${v} HP`, cls: 'dmg', rec: !state.weapon || !weaponUsableOn(v) });
     } else if (role === 'weapon') {
-      acts.push({ how: 'equip', rec: true, text: `🗡 Equip ${label(id)}`,
+      acts.push({ how: 'equip', rec: true, text: `Equip ${label(id)}`,
         sub: state.weapon ? `Discards ${label(state.weapon.card)}${state.weapon.slain.length ? ' and ' + state.weapon.slain.length + ' slain' : ''}` : 'Blocks up to ' + v + ' damage',
         out: 'equip', cls: 'zero' });
     } else {
       if (state.potionUsedInRoom) {
-        acts.push({ how: 'discard', rec: true, text: '🗑 Discard potion', sub: 'Only one potion per room has an effect', out: '+0', cls: 'zero' });
+        acts.push({ how: 'discard', rec: true, text: 'Discard potion', sub: 'Only one potion per room has an effect', out: '+0', cls: 'zero' });
       } else {
         const gain = Math.min(v, MAX_HP - state.hp);
-        acts.push({ how: 'drink', rec: true, text: `🧪 Drink ${label(id)}`, sub: gain < v ? `Health caps at ${MAX_HP} (${v - gain} wasted)` : 'Restores health',
+        acts.push({ how: 'drink', rec: true, text: `Drink ${label(id)}`, sub: gain < v ? `Health caps at ${MAX_HP} (${v - gain} wasted)` : 'Restores health',
           out: `+${gain} HP`, cls: gain ? 'heal' : 'zero' });
       }
     }
     const html = acts.map((a, i) => `<button class="act${a.rec ? ' rec' : ''}" data-i="${i}" ${a.dis || blocked ? 'disabled' : ''}>
-        <span>${a.text}<small>${a.sub}</small></span><span class="out ${a.cls}">${a.out}</span></button>`).join('');
+        <span class="act-main"><span class="act-t">${decorate(a.text)}</span><small>${decorate(a.sub)}</small></span><span class="out ${a.cls}">${esc(a.out)}</span></button>`).join('');
+    const [kj, ro] = NAMES[id];
     showSheet(`
-      <div class="sheet-head"><h3>${miniHTML(id)} &nbsp;${ROLE_LABEL[role]} · ${v}</h3><button class="icon-btn" data-close="1">✕</button></div>
-      ${reason ? `<div class="guide" style="margin:0 0 10px">${reason}</div>` : ''}
-      ${html}
-      <button class="act" data-change="1"><span>✎ Change card<small>Fix a mis-pick</small></span><span></span></button>`);
+      <div class="sheet-head ah">
+        <div class="ah-card">${cardHTML(id)}</div>
+        <div class="grow"><div class="eyebrow">${ROLE_LABEL[role]} · ${v}</div><h3 class="sheet-title">${fullName(id)}</h3>
+          <div class="ah-name"><span lang="ja">${kj}</span>${ro}</div></div>
+        <button class="close" data-close="1" aria-label="Close">${X_ICON}</button></div>
+      ${reason ? `<p class="reason">${reason}</p>` : ''}
+      <div class="acts">${html}
+        <button class="act" data-change="1"><span class="act-main"><span class="act-t">Change card</span><small>Fix a mis-pick</small></span></button></div>`, false, 'act-sheet');
     sheet.querySelectorAll('[data-i]').forEach(b => b.onclick = () => { const a = acts[+b.dataset.i]; closeSheet(); resolveCard(slot, a.how); });
     sheet.querySelector('[data-change]').onclick = () => openPicker(slot);
     sheet.querySelector('[data-close]').onclick = closeSheet;
   }
 
   function openGameOver() {
-    const o = state.over;
+    const o = state.over, st = state.stats;
     showSheet(`<div class="over">
-      <div class="big">${o.won ? '🏆' : '☠'}</div>
-      <h3>${o.won ? 'You escaped the dungeon!' : 'You died in the dungeon'}</h3>
-      <div class="score">${o.score}</div><div class="label">Score</div>
-      <p class="hint">Rooms: ${state.roomNo} · Monsters slain: ${state.stats.slain} · Damage taken: ${state.stats.dmg} · Healed: ${state.stats.healed} · Ran: ${state.stats.runs}×</p>
-      <div class="actions" style="margin-top:14px">
-        <button class="btn" data-undo="1">↶ Undo last</button>
+      <span class="seal${o.won ? '' : ' ink'}" lang="ja" aria-hidden="true">${o.won ? '生還' : '討死'}</span>
+      <h3 class="over-title">${o.won ? 'You escaped the dungeon' : 'You died in the dungeon'}</h3>
+      <div class="score">${String(o.score).replace('-', '−')}</div><span class="label">Score</span>
+      <dl class="over-stats">
+        <div><dt>Rooms</dt><dd>${state.roomNo}</dd></div>
+        <div><dt>Slain</dt><dd>${st.slain}</dd></div>
+        <div><dt>Damage</dt><dd>${st.dmg}</dd></div>
+        <div><dt>Healed</dt><dd>${st.healed}</dd></div>
+        <div><dt>Ran</dt><dd>${st.runs}×</dd></div>
+      </dl>
+      <div class="actions">
+        <button class="btn" data-undo="1">Undo last move</button>
         <button class="btn primary" data-new="1">New game</button>
-      </div></div>`, true);
+      </div></div>`, true, 'over-sheet');
     sheet.querySelector('[data-undo]').onclick = undo;
     sheet.querySelector('[data-new]').onclick = newGame;
   }
 
   function openRules() {
-    showSheet(`<div class="sheet-head"><h3>How to play Scoundrel</h3><button class="icon-btn" data-close="1">✕</button></div>
+    showSheet(`<div class="sheet-head"><div class="grow"><div class="eyebrow">Scoundrel · Zach Gage &amp; Kurt Bieg</div><h3 class="sheet-title">How to play</h3></div>
+        <button class="close" data-close="1" aria-label="Close">${X_ICON}</button></div>
       <div class="rules">
-        <h4>Setup</h4><ul><li>Remove jokers, red face cards and red aces → 44-card dungeon.</li><li>Start with 20 health (max 20).</li></ul>
-        <h4>Cards</h4><ul><li>♣ ♠ <b>Monsters</b> — damage = value (J 11, Q 12, K 13, A 14).</li>
-        <li>♦ <b>Weapons</b> — equip; replaces your old weapon.</li><li>♥ <b>Potions</b> — heal value; only one per room works.</li></ul>
-        <h4>Each room</h4><ul><li>Deal until 4 cards are face up.</li><li>Either <b>run</b> (all 4 to bottom of the dungeon — never twice in a row), or face 3 of the 4 cards.</li>
-        <li>The 4th card carries into the next room.</li></ul>
-        <h4>Fighting</h4><ul><li>Barehanded: take full damage.</li><li>With weapon: take monster − weapon (min 0).</li>
-        <li>After a kill, the weapon only works on monsters <b>lower</b> than the last one it slew.</li></ul>
-        <h4>Score</h4><ul><li>Die: minus the sum of all monsters still alive.</li><li>Survive: remaining health (+ potion value if at 20 health and your last card was a potion).</li></ul>
-        <h4>Using this app</h4><ul><li>Tap <b>+</b> to deal: Suit → Color → Rank. Seen cards are crossed out.</li><li>Tap a card to face it — outcomes are pre-calculated.</li><li>Everything can be undone; progress is auto-saved.</li></ul>
-      </div>`);
+        <section><h4>Setup</h4><ul><li>Remove the jokers, red face cards and red aces. That leaves a 44-card dungeon.</li><li>Start with 20 health. Health never goes above 20.</li></ul></section>
+        <section><h4>Cards</h4><ul><li>${decorate('♣ ♠')} <b>Monsters</b> deal damage equal to their value. J is 11, Q 12, K 13, A 14.</li>
+          <li>${decorate('♦')} <b>Weapons</b> must be equipped and replace your old weapon.</li><li>${decorate('♥')} <b>Potions</b> heal their value. Only one per room works.</li></ul></section>
+        <section><h4>Each room</h4><ul><li>Deal until 4 cards are face up.</li><li>Either <b>run</b>, putting all 4 at the bottom of the dungeon (never twice in a row), or face 3 of the 4 cards.</li>
+          <li>The 4th card carries into the next room.</li></ul></section>
+        <section><h4>Fighting</h4><ul><li>Barehanded, you take full damage.</li><li>With a weapon, you take the monster's value minus the weapon's, never below 0.</li>
+          <li>After a kill, a weapon only works on monsters <b>lower</b> than the last one it slew.</li></ul></section>
+        <section><h4>Score</h4><ul><li>Die, and you score minus the value of every monster still alive.</li><li>Survive, and you score your remaining health. At 20 health with a potion as your last card, add that potion's value.</li></ul></section>
+        <section><h4>Using this app</h4><ul><li>Tap an empty slot, choose the suit's deck, then pick your card from the fan. Cards without ink are already out of play.</li>
+          <li>Tap a dealt card to face it. Every outcome is worked out before you choose.</li><li>Everything can be undone, and progress saves automatically.</li></ul></section>
+      </div>`, false, 'rules-sheet');
     sheet.querySelector('[data-close]').onclick = closeSheet;
   }
 
