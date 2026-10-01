@@ -66,37 +66,47 @@ forms a final 1-card room that must be resolved to win.
 
 ### Core idea
 The app never shuffles or deals – **you** do. For each physical card you deal,
-you tap an empty slot and pick the card with a **3-way picker**. The app knows
+you tap an empty slot and pick that card from a **deck picker**. The app knows
 which 44 cards exist and which have already been seen, so only valid,
 not-yet-used cards are selectable (fast and mistake-proof).
 
-### The 3-way picker (Suit → Color → Rank)
-A bottom sheet with three columns, all visible at once:
+### The deck picker (suit, then card)
+A bottom sheet in two steps, both on screen at once:
 
-1. **Suit** – ♣ Clubs, ♠ Spades, ♥ Hearts, ♦ Diamonds (each labelled with its
-   role: Monster / Potion / Weapon).
-2. **Color** – Black / Red. Picking a suit auto-selects its color; picking a
-   color first narrows the suit column to the matching suits (so you can go
-   either Suit → Color or Color → Suit).
-3. **Rank** – 2…10, J, Q, K, A. Ranks not in the dungeon (red J/Q/K/A) and
-   cards already seen are disabled.
+1. **Suit.** Four small decks, each drawn as three fanned cards marked with the
+   suit's kanji. They sit in two groups: **Black** (clubs and spades, the
+   monsters) and **Red** (hearts and diamonds, the potions and weapons). Each
+   deck shows how many of its cards are left. Tapping a group head picks the
+   color first and dims the other color; if only one suit of that color still
+   has cards, it is picked for you.
+2. **Card.** Picking a deck fans its cards out below, like a hand of cards:
+   2–10, J, Q, K, A for clubs and spades, 2–10 for hearts and diamonds. Cards
+   already seen are printed without ink and can't be tapped. Pointing at a card
+   (or focusing it) names it under the fan, for example
+   "Queen of Clubs · 妖狐 Yōko · Monster 12".
 
-Tapping a rank commits the card and automatically jumps to the next empty slot,
-so dealing a full room is ~8 taps. Keyboard shortcuts on desktop:
+Tapping a card commits it and opens the next empty slot, so dealing a full room
+is about 8 taps. To fix a mis-pick, the picker opens on that card's deck with
+the card lifted and ringed in red. Until you face a card in the room, a
+**Remove** button also clears the slot.
+
+Keyboard shortcuts on desktop:
 `c s h d` = suit, `b r` = color, `2`–`9`, `0`/`t` = 10, `j q k a`, `Esc` closes.
 
 ### Resolving cards
-Tap a dealt card → a contextual action sheet shows the *pre-calculated*
-outcome for every option:
+Tap a dealt card → an action sheet shows the card, its name and the
+*pre-calculated* outcome of every option:
 
-* Monster: **⚔ Fight with weapon (−2 HP)** / **✊ Barehanded (−9 HP)**
-  (weapon option disabled with the reason if the weapon is too worn).
-* Weapon: **Equip (replaces 5♦ + 2 slain)**.
-* Potion: **Drink (+6 HP)** or **Discard (potion already used this room)**.
+* Monster: **Fight with 7♦ (−2 HP)** / **Fight barehanded (−9 HP)**.
+  The weapon option is disabled, with the reason, when the weapon is too worn.
+* Weapon: **Equip 9♦** (discards 5♦ and the 2 monsters on it).
+* Potion: **Drink 6♥ (+6 HP)**, or **Discard potion** if one already worked
+  this room.
 * Always: **Change card** (fix a mis-pick) while unresolved.
 
-Each card tile also shows a small preview badge (e.g. `−9` / `−2 ⚔` / `+6` /
-`equip`) so you can plan the room at a glance.
+The best option carries a small **Suggested** tag. Each card in the room also
+shows its role, value and a preview of the outcome underneath (`−9`, `−2` with
+a sword icon, `+6`, `equip`), so you can plan the room at a glance.
 
 ### Room flow / main controls
 * **Run away** – enabled only when the room is full, untouched and you didn't
@@ -150,78 +160,151 @@ Card ids: `C2…C14`, `S2…S14`, `H2…H10`, `D2…D10`.
 ### Main screen (mobile-first, scales up to desktop)
 
 ```
-┌─────────────────────────────────────────┐
-│ SCOUNDREL            Room 3    ↶  ☰     │  header: undo, menu
-├─────────────────────────────────────────┤
-│ ❤ 14 / 20  ███████████████░░░░░░░       │  health bar
-│                                         │
-│ ⚔ WEAPON  [ 7♦ ]  slain: Q♠ 9♣          │  weapon + stack
-│           usable on monsters < 9        │
-│                                         │
-│ 🂠 Dungeon 27 left · monsters 143 ·       │  dungeon summary
-│   ♥ 5 left · ♦ 4 left                   │
-├─────────────────────────────────────────┤
-│  ROOM 3 · resolved 1/3 · potion unused  │
-│  ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐    │
-│  │  K♣  │ │  5♥  │ │  +   │ │  +   │    │  tap + → picker
-│  │  13  │ │  +5  │ │ deal │ │ deal │    │  tap card → actions
-│  │ −6 ⚔ │ │      │ │      │ │      │    │
-│  └──────┘ └──────┘ └──────┘ └──────┘    │
-│                                         │
-│  [ 🏃 Run away ]        [ Next room → ] │
-├─────────────────────────────────────────┤
-│ ▸ Dungeon cards (44 grid, seen dimmed)  │
-│ ▸ Log                                   │
-└─────────────────────────────────────────┘
+┌───────────────────────────────────────────────┐
+│ ROOM 03                    Undo  Rules  New   │  meta row: room, undo, rules, new game
+│                                               │
+│ Scoundrel [seal]                              │  wordmark with the 悪党 seal
+│ A companion for playing Scoundrel with a      │
+│ real deck. You deal, it keeps count.          │
+├───────────────────────────────────────────────┤
+│ HEALTH        WEAPON          DUNGEON         │  three stats, numbers in Martian Mono
+│ 14 / 20       [7♦][Q♠][9♣]    27  143  5  4   │
+│ ||||||||···   below 9         left pts ♥  ♦   │
+├───────────────────────────────────────────────┤
+│ Room 3       FACED 1 of 3  POTION Ready       │
+│ ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐       │
+│ │K♣     │ │5♥     │ │       │ │       │       │  embossed cards, kanji name in the middle
+│ │  ▓▓   │ │  ▓▓   │ │   +   │ │   +   │       │  tap + to deal, tap a card to face it
+│ │     K♣│ │     5♥│ │ Deal  │ │ Deal  │       │
+│ └───────┘ └───────┘ └───────┘ └───────┘       │
+│ 13   −6 ⚔ 5      +5                           │  value and a preview of the outcome
+│                                               │
+│ Deal 2 more cards. Tap an empty slot.         │
+│              [ Run away ] [ Next room → ]     │
+├───────────────────────────────────────────────┤
+│ The deck        (44 grid, seen cards dim)   + │  folds
+│ Log                                           │
+└───────────────────────────────────────────────┘
 ```
 
-### 3-way picker (bottom sheet)
+### Deck picker (bottom sheet)
 
 ```
-┌─────────────────────────────────────────┐
-│ Deal card 3 of 4                     ✕  │
-├──────────────┬──────────┬───────────────┤
-│ 1 · SUIT     │ 2 · COLOR│ 3 · RANK      │
-│ [♣ Clubs   ] │ [■ Black]│ [2][3][4][5]  │
-│  Monster     │ [■ Red  ]│ [6][7][8][9]  │
-│ [♠ Spades  ] │          │ [10][J][Q][K] │
-│  Monster     │          │ [A]           │
-│ [♥ Hearts  ] │          │ (used/invalid │
-│  Potion      │          │  disabled)    │
-│ [♦ Diamonds] │          │               │
-│  Weapon      │          │               │
-└──────────────┴──────────┴───────────────┘
+┌───────────────────────────────────────────────┐
+│ DEAL                                      ✕   │
+│ Card 3 of 4                [K][5][ ][ ]       │  progress: cards dealt so far
+├───────────────────────────────────────────────┤
+│ 01 SUIT                                       │
+│ ● BLACK  Monsters     ● RED  Potions, weapons │  tap a group head to pick the color first
+│   ▞▮▚      ▞▮▚          ▞▮▚      ▞▮▚          │  each deck is three fanned cards
+│  Clubs    Spades       Hearts  Diamonds       │
+│  12 left  13 left      8 left   9 left        │
+├───────────────────────────────────────────────┤
+│ 02 CARD                               CLUBS   │
+│         ▞ ▞ ▞ ▞ ▞ ▞ ▮ ▚ ▚  ▚ ▚ ▚ ▚            │  picking a deck fans its suit out
+│         2 3 4 5 6 7 8 9 10 J Q K A            │  seen cards are printed without ink
+│  Tap the card you dealt. Cards without ink    │  caption names the card under the pointer
+│        are already out of play.               │
+├───────────────────────────────────────────────┤
+│ c s h d suit  b r color  2–9 0 j q k a card   │  keyboard hints, hidden on touch screens
+└───────────────────────────────────────────────┘
 ```
 
 ### Card action sheet
 
 ```
-┌─────────────────────────────────────────┐
-│  Q♠  Monster · 12                    ✕  │
-├─────────────────────────────────────────┤
-│ [ ⚔ Fight with 7♦        take −5  ]     │
-│ [ ✊ Fight barehanded     take −12 ]     │
-│ [ ✎ Change card                   ]     │
-└─────────────────────────────────────────┘
+┌───────────────────────────────────────────────┐
+│ ┌──────┐                                 ✕    │
+│ │Q     │  MONSTER · 12                        │
+│ │  ▓▓  │  Queen of Spades                     │
+│ │     Q│  HANNYA                              │  kanji name 般若 with its romaji
+│ └──────┘                                      │
+├───────────────────────────────────────────────┤
+│ Fight with 7♦  SUGGESTED              −5 HP   │
+│ Monster is stacked on your weapon             │
+├───────────────────────────────────────────────┤
+│ Fight barehanded                     −12 HP   │
+│ Keeps your weapon fresh                       │
+├───────────────────────────────────────────────┤
+│ Change card                                   │
+│ Fix a mis-pick                                │
+└───────────────────────────────────────────────┘
 ```
 
 ### Game over
 
 ```
-┌─────────────────────────────────────────┐
-│            ☠ You died  /  🏆 Escaped!    │
-│                 Score: −87              │
-│   Rooms: 9 · Monsters slain: 12         │
-│        [ New game ]  [ Undo last ]      │
-└─────────────────────────────────────────┘
+┌───────────────────────────────────────────────┐
+│                    [seal]                     │  生還 (returned alive) or 討死 (died fighting)
+│            You died in the dungeon            │
+│                     −87                       │
+│                    SCORE                      │
+├───────────────────────────────────────────────┤
+│  ROOMS  SLAIN  DAMAGE  HEALED  RAN            │
+│    9     12      48      21    1×             │
+├───────────────────────────────────────────────┤
+│      [ Undo last move ]  [ New game ]         │
+└───────────────────────────────────────────────┘
 ```
 
 ---
 
-## 5. Implementation notes
-* One self-contained `index.html`: inline CSS + vanilla JS, no dependencies,
-  works offline / from `file://`.
-* Dark "dungeon" theme, large touch targets, red/black suit colors, responsive
-  grid (2×2 room on narrow phones, 1×4 on wider screens).
+## 5. Design
+
+Quiet and typographic: a warm paper page, a lot of whitespace, ink-black text
+and one vermilion accent, the red of a Japanese name seal.
+
+* **Type.**
+  * Headings: TRJN DaVinci Italic (`fonts/TRJNDaVinci-Italic.ttf`).
+  * Interface and body text: Die Grotesk C, Regular and Medium (`fonts/`).
+  * Stats and numbers: Martian Mono (Google Fonts). Big numbers use its light,
+    narrow cut.
+  * Kanji: Shippori Mincho B1 ExtraBold (Google Fonts). None of the fonts above
+    has Japanese characters, so the page asks Google Fonts for only the 75 it
+    uses (about 25 KB).
+* **Cards** are embossed paper. The rank, suit and name are pressed into the
+  card and the face carries a raised inner panel. Cards out of play keep the
+  emboss but lose their ink.
+* **Every card has a name** in kanji, shown with its romaji. Each suit has a
+  theme, and higher cards get fiercer (monsters) or stronger (weapons and
+  potions). The suit decks carry one kanji each: 獣 beasts, 霊 spirits,
+  刀 blades, 薬 remedies.
+* **Seals.** 悪党 (scoundrel) by the wordmark. The game-over card shows 生還
+  (returned alive) or 討死 (died fighting).
+* **Motion.** Dealt cards slide in and a chosen deck fans out card by card.
+  The system's reduced-motion setting turns this off.
+* **Fit.** The picker never needs scrolling. On short screens its fan flattens
+  a little and the cards shrink until the sheet fits. On wide screens the
+  section labels move into a left rail. On phones the progress cards move up
+  next to the eyebrow, and the keyboard hints are hidden.
+
+| Rank | ♣ Beasts | ♠ Spirits | ♦ Blades | ♥ Remedies |
+|------|----------|-----------|----------|------------|
+| 2 | 鬼火 Onibi | 餓鬼 Gaki | 竹槍 Takeyari | 朝露 Asatsuyu |
+| 3 | 河童 Kappa | 幽霊 Yūrei | 木刀 Bokutō | 薬草 Yakusō |
+| 4 | 鎌鼬 Kamaitachi | 骸骨 Gaikotsu | 短刀 Tantō | 清水 Shimizu |
+| 5 | 化猫 Bakeneko | 山姥 Yamanba | 鎖鎌 Kusarigama | 甘露 Kanro |
+| 6 | 狒々 Hihi | 雪女 Yuki-onna | 脇差 Wakizashi | 神酒 Miki |
+| 7 | 百足 Mukade | 怨霊 Onryō | 薙刀 Naginata | 良薬 Ryōyaku |
+| 8 | 牛鬼 Ushi-oni | 鬼婆 Onibaba | 大弓 Daikyū | 秘薬 Hiyaku |
+| 9 | 火車 Kasha | 夜叉 Yasha | 太刀 Tachi | 霊薬 Reiyaku |
+| 10 | 雷獣 Raijū | 羅刹 Rasetsu | 名刀 Meitō | 仙丹 Sentan |
+| J | 天狗 Tengu | 修羅 Shura | | |
+| Q | 妖狐 Yōko | 般若 Hannya | | |
+| K | 大蛇 Orochi | 閻魔 Enma | | |
+| A | 龍王 Ryūō | 死神 Shinigami | | |
+
+---
+
+## 6. Implementation notes
+* One self-contained `index.html`: inline CSS + vanilla JS, no libraries or
+  build step.
+* TRJN DaVinci and Die Grotesk load from the `fonts/` folder next to
+  `index.html`. Martian Mono and the kanji face come from Google Fonts, so they
+  need a network connection. Offline (or from `file://` without a network) the
+  page falls back to system fonts and works the same.
 * Pure functions for rules (`damage`, `canUseWeapon`, `score`) and a single
   `render()` that redraws from `state`.
+* The look lives apart from the rules: `NAMES` (card names), `cardHTML` (the
+  embossed card), `renderPicker` and `fanGeometry` / `layoutFan` (the deck
+  picker). Restyling never touches the rule code.
