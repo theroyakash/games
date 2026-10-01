@@ -114,13 +114,13 @@ a sword icon, `+6`, `equip`), so you can plan the room at a glance.
 * **Next room** – appears once 3 cards are resolved; the leftover card is
   carried into slot 1 of the new room.
 * **Undo** – every action is undoable (snapshot history).
-* **New game** – with confirmation.
+* **New game** – with confirmation. The title card plays again.
 
 ### Extra helpers
-* **Dungeon tracker** – count of cards left, remaining monster total, potions
+* **Dungeon panel** – count of cards left, remaining monster total, potions
   and weapons left, and a mini grid of all 44 cards with seen cards dimmed
   (card counting!).
-* **Log** – chronological list of what happened each room.
+* **Log panel** – what happened each room, latest first.
 * **Auto-save** – state persisted to `localStorage`; reload-safe.
 * **Game-over screen** – win/lose, score, rooms cleared, monsters slain.
 
@@ -157,35 +157,57 @@ Card ids: `C2…C14`, `S2…S14`, `H2…H10`, `D2…D10`.
 
 ## 4. Wireframes
 
-### Main screen (mobile-first, scales up to desktop)
+### Splash
+
+Plays on every page load and every new game, holds about 3.6 seconds, then
+lifts like a curtain and the table rises into place.
 
 ```
 ┌───────────────────────────────────────────────┐
-│ ROOM 03                    Undo  Rules  New   │  meta row: room, undo, rules, new game
 │                                               │
-│ Scoundrel [seal]                              │  wordmark with the 悪党 seal
-│ A companion for playing Scoundrel with a      │
-│ real deck. You deal, it keeps count.          │
-├───────────────────────────────────────────────┤
-│ HEALTH        WEAPON          DUNGEON         │  three stats, numbers in Martian Mono
-│ 14 / 20       [7♦][Q♠][9♣]    27  143  5  4   │
-│ ||||||||···   below 9         left pts ♥  ♦   │
-├───────────────────────────────────────────────┤
-│ Room 3       FACED 1 of 3  POTION Ready       │
-│ ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐       │
-│ │K♣     │ │5♥     │ │       │ │       │       │  embossed cards, kanji name in the middle
-│ │  ▓▓   │ │  ▓▓   │ │   +   │ │   +   │       │  tap + to deal, tap a card to face it
-│ │     K♣│ │     5♥│ │ Deal  │ │ Deal  │       │
-│ └───────┘ └───────┘ └───────┘ └───────┘       │
-│ 13   −6 ⚔ 5      +5                           │  value and a preview of the outcome
 │                                               │
-│ Deal 2 more cards. Tap an empty slot.         │
-│              [ Run away ] [ Next room → ]     │
-├───────────────────────────────────────────────┤
-│ The deck        (44 grid, seen cards dim)   + │  folds
-│ Log                                           │
+│ Scoundrel [seal]                              │  wordmark across the page; the 悪党 seal stamps in
+│                                               │
+│                   A companion for playing     │  caption hangs off the right edge
+│                   Scoundrel with a real deck. │
+│                   You deal, it keeps count.   │
+│                                               │
+│                                               │
+│ AFTER THE SOLO CARD GAME BY     ONE DECK · 44 │  credits
+│ ZACH GAGE & KURT BIEG       CARDS · 20 HEALTH │
+│━━━━━━━━━━━━━━━━━━━━━                          │  a vermilion line fills while it holds
 └───────────────────────────────────────────────┘
 ```
+
+### Main screen (desktop: one screen, no scrolling)
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│ Scoundrel [seal]                                  Undo  Rules  New game │  brand on the left, game controls on the right
+├────────────────────────────────────────────────┬────────────────────────┤
+│ ┌────────────────────┐  WEAPON                 │ Dungeon      16 used   │  Dungeon panel: what is still in the deck
+│ │9 / 20              │  [7♦][Q♠][9♣]  SLAIN 2  │ 25    138    6     5   │
+│ │              [life]│  Usable on monsters     │ left  pts    ♥     ♦   │  health card, embossed, count in the corner
+│ │HEALTH ||||||||···· │  below 9.               │ ·· ·· ·· ·· ·· ·· ··   │
+│ └────────────────────┘                         │ 44-card grid, seen     │  weapon stack, slain monsters laid over it
+├────────────────────────────────────────────────┤ cards dimmed           │
+│ Room 6              FACED 1 of 3  POTION Used  │                        │
+│                                                ├────────────────────────┤
+│ CARRIED                                        │ Log                    │  the latest entries first
+│ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐            │ R06 Drank 6♥: +6 HP    │
+│ │J♣    │ │6♥    │ │8♠    │ │3♦    │            │ R05 Slew Q♠ with 7♦    │  cards size to the height that is left
+│ │  ▓▓  │ │  ░░  │ │  ▓▓  │ │  ▓▓  │            │ R05 Equipped 7♦        │
+│ │    J♣│ │    6♥│ │    8♠│ │    3♦│            │ R02 Ran from room      │  the log scrolls inside its panel
+│ └──────┘ └──────┘ └──────┘ └──────┘            │                        │
+│ −11      done     −1       equip               │                        │  outcome preview; a sword marks a weapon fight
+│                                                │                        │
+│ Face 2 more cards.  [Run away] [Next room →]   │                        │
+└────────────────────────────────────────────────┴────────────────────────┘
+```
+
+Phones and tablets in portrait stack the same parts in one column: the health
+card and the weapon side by side, the room with its four cards in a row, then
+the Dungeon and Log panels. That column may scroll.
 
 ### Deck picker (bottom sheet)
 
@@ -271,12 +293,31 @@ and one vermilion accent, the red of a Japanese name seal.
   刀 blades, 薬 remedies.
 * **Seals.** 悪党 (scoundrel) by the wordmark. The game-over card shows 生還
   (returned alive) or 討死 (died fighting).
+* **Health card.** Health is its own embossed card, shaped like a credit card.
+  The count is pressed into the top-left corner in large Martian Mono, 命
+  (life) is embossed without ink on the right, and 20 ticks run along the
+  bottom. The ticks turn ochre at 12 health and vermilion at 6, when the count
+  turns vermilion too.
+* **Splash.** A title card covers the table on every page load and new game:
+  the wordmark across the page, the seal stamped in, the caption, and a
+  vermilion line that fills while it holds. After about 3.6 seconds it lifts
+  and the table rises into place. On a new game the curtain first falls over
+  the last table. Keys wait until it has lifted, so nothing gets picked behind
+  it.
+* **Tilt.** Under a mouse, every card leans toward the pointer like a credit
+  card turned in the light, with a soft sheen where the pointer is: the room
+  cards, the health card, the weapon stack, the card in the action sheet and
+  the fanned cards in the picker. Touch screens skip it.
 * **Motion.** Dealt cards slide in and a chosen deck fans out card by card.
-  The system's reduced-motion setting turns this off.
-* **Fit.** The picker never needs scrolling. On short screens its fan flattens
-  a little and the cards shrink until the sheet fits. On wide screens the
-  section labels move into a left rail. On phones the progress cards move up
-  next to the eyebrow, and the keyboard hints are hidden.
+  The system's reduced-motion setting turns motion and tilt off.
+* **Fit.** On desktop (1000 px wide and up) the whole table fits on one
+  screen, with no page scroll. The room cards take whatever height is left,
+  and the log scrolls inside its own panel. Phones and tablets in portrait use
+  one scrolling column. The picker never needs scrolling: on short screens its
+  fan flattens a little and the cards shrink until the sheet fits. On wide
+  screens the picker's section labels move into a left rail. On phones the
+  progress cards move up next to the eyebrow, and the keyboard hints are
+  hidden.
 
 | Rank | ♣ Beasts | ♠ Spirits | ♦ Blades | ♥ Remedies |
 |------|----------|-----------|----------|------------|
@@ -307,4 +348,11 @@ and one vermilion accent, the red of a Japanese name seal.
   `render()` that redraws from `state`.
 * The look lives apart from the rules: `NAMES` (card names), `cardHTML` (the
   embossed card), `renderPicker` and `fanGeometry` / `layoutFan` (the deck
-  picker). Restyling never touches the rule code.
+  picker), `playSplash` (the title card) and the tilt handler. Restyling never
+  touches the rule code.
+* The splash needs no hook in the rules. `newGame()` starts a new undo-history
+  array, so `render()` plays the splash whenever it sees a new array: once on
+  load and once per new game. Undo reuses the array, so it never triggers.
+* On a new game, `render()` runs before it redraws, so `playSplash` copies the
+  old table into a still overlay (`.ghost`) that stays in view while the
+  curtain falls.

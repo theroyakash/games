@@ -94,10 +94,15 @@
   .ink-red { color: var(--shu); }
 
   /* ---------- Layout ---------- */
-  .app { max-width: 1240px; margin: 0 auto; padding: 0 var(--gutter) clamp(64px, 10vw, 140px); }
+  /* Phones and tablets get one scrolling column. Desktop fits the whole table on one screen (see "Desktop" below). */
+  .app { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "top" "main" "side";
+    max-width: 1240px; margin: 0 auto; padding: 0 var(--gutter) calc(56px + env(safe-area-inset-bottom));
+    transition: transform 1.2s var(--ease), opacity 1s var(--ease); }
 
-  .top { padding-top: max(14px, env(safe-area-inset-top)); }
-  .meta-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 48px; border-bottom: 1px solid var(--rule); }
+  .top { grid-area: top; display: flex; justify-content: space-between; align-items: center; gap: 16px;
+    min-height: 60px; padding-top: env(safe-area-inset-top); border-bottom: 1px solid var(--rule); }
+  .brand { display: flex; align-items: flex-start; gap: .14em; font: 400 30px/1 var(--f-display); letter-spacing: -.01em; }
+  .brand .seal { font-size: 7.5px; margin-top: -.2em; }
   .nav { display: flex; gap: clamp(18px, 3vw, 36px); }
   .nav button { position: relative; padding: 12px 0; font-weight: 500; font-size: 14px; color: var(--ink-2); transition: color .2s; }
   .nav button::after { content: ""; position: absolute; left: 0; right: 0; bottom: 8px; height: 1px; background: currentColor;
@@ -106,73 +111,73 @@
   .nav button:hover:not(:disabled)::after { transform: scaleX(1); }
   .nav button:disabled { color: var(--ink-4); }
 
-  .mast { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 22px 48px;
-    padding: clamp(40px, 8vw, 104px) 0 clamp(44px, 7vw, 88px); }
-  .wordmark { display: flex; align-items: flex-start; gap: .07em; margin-left: -.03em;
-    font: 400 clamp(68px, 12vw, 156px)/.8 var(--f-display); letter-spacing: -.015em; }
   .seal { display: inline-block; flex: none; writing-mode: vertical-rl; text-orientation: upright;
     font: 800 clamp(12px, 1.3vw, 18px)/1 var(--f-jp); letter-spacing: .14em;
     color: #faf0e9; background: var(--shu); padding: .55em .36em .41em; border-radius: .2em;
     box-shadow: inset 0 0 0 .16em var(--shu), inset 0 0 0 .23em rgba(255, 244, 236, .75), 0 1px 0 rgba(255, 255, 255, .6);
     transform: rotate(-4deg); margin-top: .5em; }
   .seal.ink { background: var(--ink); box-shadow: inset 0 0 0 .16em var(--ink), inset 0 0 0 .23em rgba(255, 244, 236, .6); }
-  .tagline { max-width: 30ch; padding-bottom: .35em; font-size: 16px; line-height: 1.45; color: var(--ink-2); }
 
-  /* stats band */
-  .stats { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1.65fr);
-    border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
-  .stat { min-width: 0; padding: 28px clamp(20px, 3vw, 40px) 32px; }
-  .stat:first-child { padding-left: 0; }
-  .stat:last-child { padding-right: 0; }
-  .stat + .stat { border-left: 1px solid var(--rule); }
+  .main { grid-area: main; min-width: 0; }
 
-  .hp { display: flex; align-items: baseline; gap: 10px; margin-top: 22px; }
-  .hp-num { font: 250 clamp(52px, 6vw, 76px)/.86 var(--f-mono); font-stretch: 87.5%; letter-spacing: -.05em; font-variant-numeric: tabular-nums; }
-  .hp-max { font: 400 13px/1 var(--f-mono); color: var(--ink-3); }
-  .ticks { display: flex; justify-content: space-between; align-items: flex-end; max-width: 236px; height: 16px; margin-top: 20px; }
+  /* status: the health card and the weapon stack share one height, --h */
+  .stats { --h: clamp(112px, 18vh, 158px); display: flex; align-items: stretch; gap: clamp(28px, 4vw, 64px);
+    padding: clamp(20px, 3.2vh, 32px) 0; border-bottom: 1px solid var(--rule); }
+
+  /* health card: landscape, with the count pressed into the top-left corner */
+  .hc-wrap { position: relative; flex: none; }
+  .pc.hc { width: calc(var(--h) * 1.6); height: var(--h); border-radius: calc(var(--h) * .075); }
+  .hc .pc-face { font-size: var(--h); } /* 1em = card height */
+  .hc .pc-face::before { content: none; }
+  .hc-count { position: absolute; left: 7.5%; top: 11%; display: flex; align-items: baseline; gap: .07em; }
+  .hp-num { font: 250 .44em/.8 var(--f-mono); font-stretch: 87.5%; letter-spacing: -.05em; font-variant-numeric: tabular-nums; text-shadow: var(--emb); }
+  .hp-max { font: 400 .085em/1 var(--f-mono); color: var(--ink-3); }
+  .hc[data-level="low"] .hp-num { color: var(--shu); }
+  .hc-kj { position: absolute; right: 7%; top: 50%; transform: translateY(-50%); font: 800 .56em/1 var(--f-jp); color: var(--blind); text-shadow: var(--blind-txt); }
+  .hc-foot { position: absolute; left: 7.5%; right: 42%; bottom: 12%; display: grid; gap: .08em; }
+  .hc-label { font: 500 .068em/1 var(--f-body); letter-spacing: .16em; text-transform: uppercase; color: var(--ink-3); }
+  .ticks { display: flex; justify-content: space-between; align-items: flex-end; height: .1em; }
   .ticks i { flex: 0 0 2px; height: 62%; border-radius: 1px; background: var(--rule); transition: background .5s; }
   .ticks i:nth-child(5n) { height: 100%; }
   .ticks i.on { background: var(--ink); }
   .ticks.mid i.on { background: var(--ochre); }
   .ticks.low i.on { background: var(--shu); }
 
-  .weapon { display: flex; align-items: center; gap: 20px; min-height: 76px; margin-top: 18px; }
-  .wstack { display: flex; padding: 2px 0; }
-  .wstack .pc { --mw: 52px; }
-  .wstack .pc + .pc { margin-left: -34px; }
+  /* weapon: the weapon card with each slain monster laid over it */
+  .stat-weapon { --mw: min(calc((var(--h) - 28px) / 1.4), 84px); display: flex; flex-direction: column; justify-content: space-between; gap: 16px; min-width: 0; }
+  .weapon { display: flex; align-items: flex-end; gap: clamp(16px, 2.2vw, 30px); min-height: calc(var(--mw) * 1.4); }
+  .wtilt { position: relative; flex: none; }
+  .wstack { position: relative; display: flex; border-radius: calc(var(--mw) * .07); transition: transform .5s var(--ease); }
+  .wstack .pc + .pc { margin-left: calc(var(--mw) * -.68); }
+  .winfo { display: grid; gap: 12px; min-width: 0; padding-bottom: 2px; }
   .wslain { display: grid; gap: 8px; }
-  .wslain b { font: 300 22px/1 var(--f-mono); font-weight: 300; }
-  .barehanded { font: 400 clamp(32px, 3.4vw, 42px)/1 var(--f-display); color: var(--ink-3); }
-  .hint { max-width: 32ch; margin-top: 14px; font-size: 13px; line-height: 1.45; color: var(--ink-3); }
-
-  .dstats { display: grid; grid-template-columns: repeat(4, max-content); justify-content: space-between; gap: 16px; margin-top: 22px; }
-  .dstats .n { display: block; font: 250 clamp(32px, 3.6vw, 46px)/.86 var(--f-mono); font-stretch: 87.5%; letter-spacing: -.045em; }
-  .dstats .l { display: block; margin-top: 14px; font-size: 12px; line-height: 1.35; color: var(--ink-3); }
-  .dstats .l .sub { display: block; color: var(--ink-4); }
-  .dstats .l .suit { font-size: 10px; margin-left: 2px; }
+  .wslain b { font: 300 24px/1 var(--f-mono); }
+  .barehanded { font: 400 clamp(34px, 3.4vw, 46px)/.9 var(--f-display); color: var(--ink-3); }
+  .hint { max-width: 30ch; font-size: 13px; line-height: 1.45; color: var(--ink-3); }
 
   /* room */
-  .room { padding: clamp(52px, 8vw, 116px) 0 clamp(52px, 7vw, 100px); }
-  .room-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 24px 40px;
-    max-width: 1000px; margin-bottom: clamp(40px, 5.5vw, 72px); }
-  .room-title { font: 400 clamp(64px, 10.5vw, 136px)/.78 var(--f-display); letter-spacing: -.015em; }
+  .room { padding: clamp(28px, 4.4vh, 48px) 0 clamp(28px, 4vh, 44px); }
+  .room-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px 40px; }
+  .room-title { font: 400 clamp(48px, min(5.6vw, 9vh), 84px)/.8 var(--f-display); letter-spacing: -.015em; }
   .room-title .no { font-feature-settings: "onum"; }
-  .status { display: flex; gap: clamp(22px, 3.5vw, 48px); padding-bottom: 6px; }
+  .status { display: flex; gap: clamp(22px, 3.5vw, 48px); padding-bottom: 4px; }
   .st { display: grid; gap: 9px; }
   .st .k { font: 500 10.5px/1 var(--f-body); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
   .st .v { font: 400 13px/1 var(--f-mono); white-space: nowrap; }
   .st.on .v { color: var(--moss); }
   .st.warn .v { color: var(--shu); }
 
-  .slots { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(12px, 2.8vw, 40px); max-width: 1000px; }
+  .slots-box { margin-top: clamp(32px, 4.6vh, 48px); }
+  .slots { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(12px, 2.4vw, 32px); }
   .slot { position: relative; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
   .slot:focus-visible { outline: none; }
   .slot:focus-visible .pc, .slot:focus-visible .well { outline: 1.5px solid var(--ink); outline-offset: 5px; }
-  .slot.card:not(:disabled):hover .pc { transform: translateY(-6px); box-shadow: var(--lift); }
-  .slot.card:not(:disabled):active .pc { transform: translateY(-2px) scale(.985); }
-  .slot.carried::before { content: "Carried"; position: absolute; left: 0; bottom: 100%; margin-bottom: 12px;
+  .slot.card { --persp: 900px; --tilt: 11deg; }
+  .slot.card:not(:disabled):hover > .pc { --rise: -6px; --zoom: 1.02; box-shadow: var(--lift); }
+  .slot.card:not(:disabled):active > .pc { --rise: -2px; --zoom: .99; }
+  .slot.carried::before { content: "Carried"; position: absolute; left: 0; bottom: 100%; margin-bottom: 9px;
     font: 500 10px/1 var(--f-body); letter-spacing: .16em; text-transform: uppercase; color: var(--shu); }
-  .slot.deal-in .pc { animation: dealIn .65s var(--ease) both; animation-delay: calc(var(--d, 0) * 80ms); }
+  .slot.deal-in .pc { animation: dealIn .65s var(--ease) backwards; animation-delay: calc(var(--d, 0) * 80ms); }
   @keyframes dealIn { from { opacity: 0; transform: translateY(-26px) rotate(-2deg); } }
 
   .cap { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; min-height: 16px;
@@ -193,8 +198,7 @@
   .slot.empty:not(:disabled):hover .well { color: var(--ink); background: rgba(var(--sh), .065); }
   .slot.disabled-slot .well { background: none; box-shadow: inset 0 0 0 .5px var(--rule-2); }
 
-  .room-foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 22px 40px;
-    max-width: 1000px; margin-top: clamp(36px, 5vw, 60px); }
+  .room-foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 18px 36px; margin-top: clamp(26px, 3.6vh, 40px); }
   .guide { flex: 1 1 280px; min-height: 24px; font-size: 16px; line-height: 1.45; color: var(--ink-2); }
   .actions { display: flex; gap: 10px; }
   .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 52px; padding: 0 28px;
@@ -205,17 +209,24 @@
   .btn.primary:hover:not(:disabled) { background: #000; }
   .btn:disabled { color: var(--ink-4); background: none; box-shadow: inset 0 0 0 1px var(--rule-2); }
 
-  /* deck grid + log */
-  .lower { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 0 clamp(32px, 6vw, 96px); border-top: 1px solid var(--rule); }
-  .fold { padding: 30px 0 8px; }
-  .fold summary { display: flex; align-items: baseline; gap: 16px; list-style: none; cursor: pointer; }
-  .fold summary::-webkit-details-marker { display: none; }
-  .fold summary h2 { font: 400 clamp(36px, 4vw, 50px)/1 var(--f-display); }
-  .fold summary::after { content: "+"; margin-left: auto; font: 200 24px/1 var(--f-mono); color: var(--ink-3); transition: transform .4s var(--ease); }
-  .fold[open] summary::after { transform: rotate(45deg); }
+  /* dungeon + log */
+  .side { grid-area: side; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 clamp(32px, 5vw, 72px);
+    border-top: 1px solid var(--rule); }
+  .panel { min-width: 0; padding: 26px 0 10px; }
+  .panel-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 16px; }
+  .panel-head .meta { white-space: nowrap; }
+  .panel-head h2 { font: 400 34px/1 var(--f-display); }
 
-  .grid44 { display: grid; grid-template-columns: 20px repeat(13, minmax(0, 1fr)); gap: 6px 4px; margin-top: 26px; }
-  .grid44 .sh { display: grid; place-items: center; font-size: 13px; }
+  .dstats { display: grid; grid-template-columns: repeat(4, auto); justify-content: space-between; gap: 14px; margin-top: 22px; }
+  .dstats .n { display: block; font: 250 clamp(28px, 3vw, 38px)/.86 var(--f-mono); font-stretch: 87.5%; letter-spacing: -.045em; }
+  .dstats .l { display: block; margin-top: 10px; font-size: 12px; line-height: 1.35; color: var(--ink-3); }
+  .dstats .l .sub { display: block; color: var(--ink-4); }
+  .dstats .l .suit { font-size: 10px; margin-left: 2px; }
+  .dungeon { container: dungeon / inline-size; }
+  @container dungeon (max-width: 300px) { .dstats { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 18px; } }
+
+  .grid44 { display: grid; grid-template-columns: 18px repeat(13, minmax(0, 1fr)); gap: 5px 4px; margin-top: 24px; }
+  .grid44 .sh { display: grid; place-items: center; font-size: 12px; }
   .grid44 .cell { display: grid; place-items: center; aspect-ratio: 5 / 7; border-radius: 3px;
     font: 400 10px/1 var(--f-mono); letter-spacing: -.03em;
     background: linear-gradient(160deg, var(--card-hi), var(--card-lo));
@@ -225,9 +236,9 @@
   .grid44 .cell.inroom { box-shadow: 0 0 0 1px var(--ink), 0 1px 2px rgba(var(--sh), .15); }
   .grid44 .cell.na { visibility: hidden; }
 
-  .log { max-height: 380px; margin-top: 18px; overflow: auto; overscroll-behavior: contain; }
-  .log > div { display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 12px; padding: 12px 0;
-    border-top: 1px solid var(--rule-2); font-size: 14px; line-height: 1.45; color: var(--ink-2); }
+  .log { max-height: 360px; margin-top: 12px; overflow: auto; overscroll-behavior: contain; }
+  .log > div { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 10px; padding: 10px 0;
+    border-top: 1px solid var(--rule-2); font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
   .log > div:first-child { border-top: 0; }
   .log .r { font: 400 11px/20px var(--f-mono); color: var(--ink-3); }
   .log .t::before { content: ""; display: inline-block; width: 5px; height: 5px; margin: 0 10px 2px 0; border-radius: 50%; background: var(--ink-4); }
@@ -235,6 +246,30 @@
   .log .heal .t::before { background: var(--moss); }
   .log .equip .t::before { background: var(--ai); }
   .log .run .t::before { background: var(--ochre); }
+
+  /* ---------- Desktop: the whole table on one screen ---------- */
+  @media (min-width: 1000px) and (min-height: 560px) {
+    .app { --gutter: clamp(28px, 3.6vw, 56px); height: 100vh; height: 100dvh; max-width: 1600px; overflow: hidden; padding-bottom: 0;
+      grid-template-columns: minmax(0, 1fr) clamp(290px, 26vw, 380px); grid-template-rows: auto minmax(0, 1fr);
+      grid-template-areas: "top top" "main side"; column-gap: clamp(28px, 3.4vw, 56px); }
+    .top { min-height: clamp(52px, 7.4vh, 68px); }
+    .main { display: flex; flex-direction: column; min-height: 0; }
+    .room { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; padding: clamp(18px, 3.2vh, 34px) 0 clamp(18px, 3.4vh, 34px); }
+    /* cards take whatever height is left: as wide as four fit, as tall as the box allows */
+    .slots-box { flex: 1 1 auto; min-height: 0; margin-top: clamp(44px, 7vh, 60px); container-type: size; }
+    .slots { --gap: clamp(14px, 1.9vw, 30px); --cw: min(calc((100cqw - 3 * var(--gap)) / 4), calc((100cqh - 30px) / 1.4), 260px);
+      height: 100%; grid-template-columns: repeat(4, var(--cw)); justify-content: space-between; align-content: center; gap: var(--gap); }
+    .room-foot { margin-top: clamp(14px, 2.4vh, 26px); }
+    .side { display: flex; flex-direction: column; min-height: 0; border-top: 0; border-left: 1px solid var(--rule); padding-left: clamp(22px, 2.4vw, 40px); }
+    .panel { padding: clamp(20px, 3.2vh, 32px) 0; }
+    .panel + .panel { border-top: 1px solid var(--rule); }
+    .panel-head h2 { font-size: clamp(28px, 3.8vh, 36px); }
+    .dstats { margin-top: clamp(14px, 2.4vh, 22px); }
+    .grid44 { margin-top: clamp(16px, 2.6vh, 26px); }
+    .logp { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; padding-bottom: 0; }
+    .log { flex: 1 1 auto; min-height: 0; max-height: none; padding-bottom: 28px;
+      -webkit-mask-image: linear-gradient(#000 calc(100% - 56px), transparent); mask-image: linear-gradient(#000 calc(100% - 56px), transparent); }
+  }
 
   /* ---------- Playing card ---------- */
   /* 1em inside .pc-face = card width / 7, so every card scales from one width. */
@@ -379,6 +414,7 @@
     transition: transform .7s var(--ease); }
   .fan.stacked .fan-card { transform: rotate(0deg) translateY(16px); }
   .fan.opening .fan-card { transition-delay: calc(var(--i) * 22ms); }
+  .fan-card { --persp: 600px; --tilt: 12deg; }
   .fan-card .pc { transition: transform .28s var(--ease), box-shadow .28s var(--ease); }
   .fan-card .pc-face { font-size: 19cqw; }
   .fan-card .pc-face::before, .fan-card .pc-art { inset: 6% 7% 6% 27%; }
@@ -388,10 +424,10 @@
   .fan-card .pc-idx .kj { display: block; margin-top: .22em; writing-mode: vertical-rl; text-orientation: upright;
     font: 800 .6em/1 var(--f-jp); letter-spacing: .06em; text-shadow: var(--emb); }
   .fan-card .pc-kanji { font-size: 1.3em; }
-  .fan-card:not(:disabled):hover .pc, .fan-card:focus-visible .pc { transform: translateY(-16%); box-shadow: var(--lift); }
+  .fan-card:not(:disabled):hover .pc, .fan-card:focus-visible .pc { --rise: -16%; box-shadow: var(--lift); }
   .fan-card:focus-visible { outline: none; }
   .fan-card:focus-visible .pc { outline: 1.5px solid var(--ink); outline-offset: 3px; }
-  .fan-card.cur .pc { transform: translateY(-16%); box-shadow: var(--lift), 0 0 0 1.5px var(--shu); }
+  .fan-card.cur .pc { --rise: -16%; box-shadow: var(--lift), 0 0 0 1.5px var(--shu); }
 
   .fan-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; height: 240px; margin-top: 6px;
     border-radius: 22px; text-align: center; background: rgba(var(--sh), .03);
@@ -412,7 +448,8 @@
 
   /* ---------- Card actions ---------- */
   .ah { align-items: flex-end; gap: clamp(18px, 3vw, 32px); }
-  .ah-card { flex: none; width: clamp(88px, 15vw, 124px); }
+  .ah-card { --persp: 700px; --tilt: 12deg; position: relative; flex: none; width: clamp(88px, 15vw, 124px); }
+  .ah-card.tilting > .pc { --zoom: 1.03; box-shadow: var(--lift); }
   .ah .sheet-title { font-size: clamp(34px, 5.4vw, 52px); }
   .ah-name { margin-top: 14px; font: 400 11px/1.4 var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
   .ah-name [lang="ja"] { margin-right: 10px; font: 800 15px/1 var(--f-jp); letter-spacing: .12em; color: var(--ink); }
@@ -456,6 +493,65 @@
   .rules li { padding: 5px 0; font-size: 14.5px; line-height: 1.5; color: var(--ink-2); }
   .rules li b { color: var(--ink); }
 
+  /* ---------- Tilt ---------- */
+  /* Under a mouse, cards lean toward the pointer like a credit card turned in the light.
+     JS sets --tx and --ty (-1 to 1) on the [data-tilt] host; its first child is the card that moves.
+     Hover states lift the card with --rise and --zoom instead of their own transform. */
+  [data-tilt] > :first-child {
+    transform: perspective(var(--persp, 800px)) translateY(var(--rise, 0px))
+      rotateX(calc(var(--ty, 0) * var(--tilt, 10deg) * -1)) rotateY(calc(var(--tx, 0) * var(--tilt, 10deg))) scale(var(--zoom, 1)); }
+  [data-tilt].tilting > :first-child { transition: transform .14s ease-out, box-shadow .45s var(--ease); }
+  /* the sheen: light where the pointer is, a little shade on the far side */
+  [data-tilt] > :first-child::after { content: ""; position: absolute; inset: 0; z-index: 4; border-radius: inherit; pointer-events: none; opacity: 0;
+    background: radial-gradient(circle at var(--gx, 50%) var(--gy, 50%), rgba(255, 255, 255, .62), rgba(255, 255, 255, 0) 48%),
+      radial-gradient(circle at calc(100% - var(--gx, 50%)) calc(100% - var(--gy, 50%)), rgba(var(--sh), .09), rgba(var(--sh), 0) 60%);
+    transition: opacity .5s var(--ease); }
+  [data-tilt].tilting > :first-child::after { opacity: 1; }
+  .hc-wrap { --persp: 900px; --tilt: 9deg; }
+  .hc-wrap.tilting > .hc { --zoom: 1.02; box-shadow: var(--lift); }
+  .wtilt { --persp: 700px; --tilt: 11deg; }
+  .wtilt.tilting > .wstack { --zoom: 1.04; }
+
+  /* ---------- Splash ---------- */
+  /* The title card covers the table on every page load and new game, then lifts away. */
+  .splash { position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; justify-content: center; overflow: hidden;
+    padding: max(32px, env(safe-area-inset-top)) var(--gutter) max(32px, env(safe-area-inset-bottom));
+    background-color: var(--paper); background-image: var(--grain); box-shadow: 0 30px 70px -20px rgba(var(--sh), .5); }
+  .splash[hidden] { display: none; }
+  .splash-in { display: flex; flex-direction: column; align-items: flex-start; gap: clamp(26px, 5vh, 56px);
+    width: 100%; max-width: 1240px; margin: 0 auto; }
+  .splash-mark { display: flex; align-items: flex-start; gap: .06em; margin-left: -.03em;
+    font: 400 clamp(76px, 17vw, 260px)/.8 var(--f-display); letter-spacing: -.015em; }
+  .splash .seal { font-size: clamp(13px, 1.6vw, 24px); }
+  /* the caption hangs off the right edge, under the end of the wordmark */
+  .splash-tag { align-self: flex-end; max-width: 30ch; font-size: clamp(16px, 1.4vw, 19px); line-height: 1.45; color: var(--ink-2); }
+  .splash-foot { position: absolute; left: var(--gutter); right: var(--gutter); bottom: max(28px, 4.6vh); max-width: 1240px; margin: 0 auto;
+    display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 32px;
+    font: 400 11px/1.5 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+  .splash-foot .nw { white-space: nowrap; }
+  .splash-bar { position: absolute; left: 0; bottom: 0; width: 100%; height: 2px; background: var(--shu); transform-origin: 0 50%; transform: scaleX(0); }
+  .splash.run .splash-mark > span:first-child { animation: wmIn 1.3s var(--ease) calc(var(--t0, 0s) + .15s) both; }
+  .splash.run .seal { animation: stamp .6s cubic-bezier(.3, 1.45, .5, 1) calc(var(--t0, 0s) + .95s) both; }
+  .splash.run .splash-tag { animation: riseIn .9s var(--ease) calc(var(--t0, 0s) + 1.2s) both; }
+  .splash.run .splash-foot > span { animation: riseIn .9s var(--ease) calc(var(--t0, 0s) + 1.45s) both; }
+  .splash.run .splash-bar { animation: fill 3.3s linear calc(var(--t0, 0s) + .3s) both; }
+  .splash.late { --t0: .75s; }
+  .splash.enter { animation: curtainDown .8s cubic-bezier(.76, 0, .24, 1) both; }
+  .splash.out { transform: translateY(-100%); transition: transform 1s cubic-bezier(.76, 0, .24, 1); }
+  .splash.out .splash-in, .splash.out .splash-foot { transform: translateY(-10vh); opacity: 0;
+    transition: transform 1s cubic-bezier(.76, 0, .24, 1), opacity .6s ease; }
+  @keyframes wmIn { from { opacity: 0; transform: translateY(.14em); filter: blur(14px); } }
+  @keyframes stamp { from { opacity: 0; transform: scale(1.9) rotate(-16deg); } to { opacity: 1; transform: rotate(-4deg); } }
+  @keyframes riseIn { from { opacity: 0; transform: translateY(14px); } }
+  @keyframes fill { to { transform: scaleX(1); } }
+  @keyframes curtainDown { from { transform: translateY(-100%); } }
+  /* while the splash is up the table waits below, and any open sheet stays hidden until the reveal */
+  .is-veiled .app { transform: translateY(6vh); opacity: .35; transition: none; }
+  .is-splash .backdrop { visibility: hidden; }
+  /* on a new game, a still copy of the last table stays in view while the curtain falls over it */
+  .ghost { position: fixed; z-index: 39; margin: 0; pointer-events: none; background-color: var(--paper); background-image: var(--grain); }
+  .ghost, .ghost * { animation: none !important; transition: none !important; }
+
   /* ---------- Responsive ---------- */
   /* wide screens: picker sections hang their labels in a left rail */
   @media (min-width: 960px) {
@@ -482,33 +578,43 @@
     .fan-cap { margin-top: 10px; }
     .keys { margin-top: 14px; padding-top: 12px; }
   }
-  @media (max-width: 900px) {
-    .stats { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-    .stat:nth-child(2) { padding-right: 0; }
-    .stat.stat-dungeon { grid-column: 1 / -1; padding-left: 0; border-left: 0; border-top: 1px solid var(--rule); }
-    .lower { grid-template-columns: minmax(0, 1fr); }
-    .lower .fold + .fold { border-top: 1px solid var(--rule); }
+  @media (max-width: 760px) {
+    .side { grid-template-columns: minmax(0, 1fr); }
+    .panel + .panel { border-top: 1px solid var(--rule); }
   }
   @media (max-width: 600px) {
     body { font-size: 14px; }
-    .mast { padding: 34px 0 40px; }
-    .tagline { font-size: 14px; }
+    .top { min-height: 54px; }
+    .brand { font-size: 26px; }
+    .nav { gap: 20px; }
     .nav .wide { display: none; }
-    .stat { padding: 22px 16px 24px; }
-    .hp { margin-top: 18px; }
-    .weapon { gap: 14px; min-height: 64px; }
-    .wstack .pc { --mw: 44px; }
-    .wstack .pc + .pc { margin-left: -29px; }
-    .dstats { gap: 10px; }
-    .dstats .l { font-size: 11px; }
+    .stats { --h: 98px; gap: 16px; padding: 20px 0 22px; }
+    .stat-weapon { gap: 12px; }
+    .weapon { flex-wrap: wrap; gap: 10px 14px; min-height: 0; }
+    .winfo { gap: 8px; }
+    .wslain b { font-size: 20px; }
+    .hint { font-size: 12px; }
+    .barehanded { font-size: 30px; }
+    .room { padding: 28px 0 30px; }
     .room-head { flex-direction: column; align-items: flex-start; }
+    .room-title { font-size: 46px; }
     .status { gap: 22px; }
+    .slots-box { margin-top: 38px; }
+    .slots { gap: 8px; }
     .cap { justify-content: flex-start; font-size: 11px; }
     .cap .role { display: none; }
     .slot.carried::before { letter-spacing: .1em; font-size: 9px; }
+    .room-foot { margin-top: 22px; }
     .guide { font-size: 15px; }
     .actions { width: 100%; }
     .actions .btn { flex: 1; padding: 0 14px; }
+    .panel { padding-top: 22px; }
+    .panel-head h2 { font-size: 30px; }
+    .dstats { gap: 10px; }
+    .dstats .l { font-size: 11px; }
+    .splash-in { gap: 22px; }
+    .splash-tag { align-self: flex-start; }
+    .splash-foot { flex-direction: column; }
     .sheet { padding-top: 10px; border-radius: 22px 22px 0 0; }
     .sheet::before { margin-bottom: 16px; }
     /* phones: the progress cards ride on the eyebrow row, above the title */
@@ -533,7 +639,7 @@
     .act.rec:not(:disabled) .act-t::after { display: none; }
     .act.rec:not(:disabled) .out { text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 1px; }
   }
-  @media (max-width: 360px) {
+  @media (max-width: 340px) {
     .slots { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -541,7 +647,7 @@
   }
 </style>
 </head>
-<body>
+<body class="is-splash is-veiled">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <symbol id="s-S" viewBox="0 0 24 24"><path d="M12 2.2c.9 2.1 3.6 4.6 5.9 6.9 1.9 1.9 3.3 3.6 3.3 5.7 0 2.5-1.9 4.3-4.3 4.3-1.5 0-2.8-.7-3.6-1.8.2 1.9 1 3.4 2.4 4.5H8.3c1.4-1.1 2.2-2.6 2.4-4.5-.8 1.1-2.1 1.8-3.6 1.8-2.4 0-4.3-1.8-4.3-4.3 0-2.1 1.4-3.8 3.3-5.7C8.4 6.8 11.1 4.3 12 2.2z"/></symbol>
   <symbol id="s-C" viewBox="0 0 24 24"><circle cx="12" cy="7.1" r="4.3"/><circle cx="7.2" cy="13.9" r="4.3"/><circle cx="16.8" cy="13.9" r="4.3"/><circle cx="12" cy="12.2" r="2.6"/><path d="M12 9.5c.6 0 1 .4 1 1v1.8c0 3.6.8 6.8 2.9 9.5H8.1c2.1-2.7 2.9-5.9 2.9-9.5v-1.8c0-.6.4-1 1-1z"/></symbol>
@@ -551,64 +657,69 @@
   <symbol id="i-x" viewBox="0 0 16 16"><path d="M3 3l10 10M13 3 3 13" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></symbol>
 </svg>
 
-<div class="app">
+<div class="splash run" id="splash" aria-hidden="true">
+  <div class="splash-in">
+    <div class="splash-mark"><span>Scoundrel</span><span class="seal" lang="ja">悪党</span></div>
+    <p class="splash-tag">A companion for playing Scoundrel with a real deck. You deal, it keeps count.</p>
+  </div>
+  <div class="splash-foot"><span>After the solo card game by <span class="nw">Zach Gage &amp; Kurt Bieg</span></span><span>One deck · 44 cards · 20 health</span></div>
+  <span class="splash-bar"></span>
+</div>
+
+<div class="app" id="app">
   <header class="top">
-    <div class="meta-row">
-      <span class="meta" id="roomLabel"></span>
-      <nav class="nav" aria-label="Game">
-        <button id="undoBtn" title="Undo (Ctrl+Z)">Undo</button>
-        <button id="rulesBtn" title="Rules">Rules</button>
-        <button id="newBtn" title="New game">New<span class="wide"> game</span></button>
-      </nav>
-    </div>
-    <div class="mast">
-      <h1 class="wordmark">Scoundrel<span class="seal" lang="ja" aria-hidden="true">悪党</span></h1>
-      <p class="tagline">A companion for playing Scoundrel with a real deck. You deal, it keeps count.</p>
-    </div>
+    <h1 class="brand">Scoundrel<span class="seal" lang="ja" aria-hidden="true">悪党</span></h1>
+    <nav class="nav" aria-label="Game">
+      <button id="undoBtn" title="Undo (Ctrl+Z)">Undo</button>
+      <button id="rulesBtn" title="Rules">Rules</button>
+      <button id="newBtn" title="New game">New<span class="wide"> game</span></button>
+    </nav>
   </header>
 
-  <section class="stats" aria-label="Status">
-    <div class="stat">
-      <div class="label">Health</div>
-      <div class="hp" id="hp"></div>
-      <div class="ticks" id="hpTicks" aria-hidden="true"></div>
-    </div>
-    <div class="stat">
-      <div class="label">Weapon</div>
-      <div class="weapon" id="weapon"></div>
-      <p class="hint" id="weaponHint"></p>
-    </div>
-    <div class="stat stat-dungeon">
-      <div class="label">Dungeon</div>
-      <div class="dstats" id="dstats"></div>
-    </div>
-  </section>
-
-  <section class="room" aria-labelledby="roomTitle">
-    <div class="room-head">
-      <h2 class="room-title" id="roomTitle"></h2>
-      <div class="status" id="chips"></div>
-    </div>
-    <div class="slots" id="slots"></div>
-    <div class="room-foot">
-      <p class="guide" id="guide" aria-live="polite"></p>
-      <div class="actions">
-        <button class="btn" id="runBtn">Run away</button>
-        <button class="btn primary" id="nextBtn">Next room <span aria-hidden="true">→</span></button>
+  <main class="main">
+    <section class="stats" aria-label="Status">
+      <div class="hc-wrap" data-tilt>
+        <div class="pc hc" id="hpCard">
+          <div class="pc-face">
+            <div class="hc-count" id="hp" role="img"></div>
+            <span class="hc-kj" lang="ja" aria-hidden="true">命</span>
+            <div class="hc-foot"><span class="hc-label">Health</span><div class="ticks" id="hpTicks" aria-hidden="true"></div></div>
+          </div>
+        </div>
       </div>
-    </div>
-  </section>
+      <div class="stat-weapon">
+        <div class="label">Weapon</div>
+        <div class="weapon" id="weapon"></div>
+      </div>
+    </section>
 
-  <div class="lower">
-    <details class="fold" id="deckDetails">
-      <summary><h2>The deck</h2><span class="meta" id="deckSum"></span></summary>
+    <section class="room" aria-labelledby="roomTitle">
+      <div class="room-head">
+        <h2 class="room-title" id="roomTitle"></h2>
+        <div class="status" id="chips"></div>
+      </div>
+      <div class="slots-box"><div class="slots" id="slots"></div></div>
+      <div class="room-foot">
+        <p class="guide" id="guide" aria-live="polite"></p>
+        <div class="actions">
+          <button class="btn" id="runBtn">Run away</button>
+          <button class="btn primary" id="nextBtn">Next room <span aria-hidden="true">→</span></button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <aside class="side">
+    <section class="panel dungeon" aria-labelledby="dungeonTitle">
+      <div class="panel-head"><h2 id="dungeonTitle">Dungeon</h2><span class="meta" id="deckSum"></span></div>
+      <div class="dstats" id="dstats"></div>
       <div class="grid44" id="grid44"></div>
-    </details>
-    <details class="fold" open>
-      <summary><h2>Log</h2></summary>
+    </section>
+    <section class="panel logp" aria-labelledby="logTitle">
+      <div class="panel-head"><h2 id="logTitle">Log</h2></div>
       <div class="log" id="log"></div>
-    </details>
-  </div>
+    </section>
+  </aside>
 </div>
 
 <div class="backdrop" id="backdrop"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
@@ -873,10 +984,11 @@
   }
 
   let dealt = []; // card id per slot at the previous render, so only newly dealt cards animate in
+  let seenHistory = null; // newGame() starts a new undo history array, so a new array means a new game
 
   function render() {
     const s = state;
-    $('roomLabel').textContent = `Room ${String(s.roomNo).padStart(2, '0')}`;
+    if (history !== seenHistory) { playSplash(seenHistory !== null); seenHistory = history; }
     $('undoBtn').disabled = !history.length;
 
     // health
@@ -887,19 +999,17 @@
     const ticks = $('hpTicks');
     ticks.className = 'ticks' + (pct > 60 ? '' : pct > 30 ? ' mid' : ' low');
     ticks.innerHTML = Array.from({ length: MAX_HP }, (_, i) => `<i${i < hp ? ' class="on"' : ''}></i>`).join('');
+    $('hpCard').dataset.level = pct > 60 ? 'ok' : pct > 30 ? 'mid' : 'low';
 
     // weapon: the weapon card with slain monsters stacked on top of it
-    if (s.weapon) {
-      const w = s.weapon;
-      $('weapon').innerHTML = `<div class="wstack">${miniHTML(w.card)}${w.slain.map(c => miniHTML(c)).join('')}</div>` +
-        (w.slain.length ? `<div class="wslain"><span class="label">Slain</span><b>${w.slain.length}</b></div>` : '');
-      $('weaponHint').innerHTML = decorate(w.slain.length
-        ? `Usable on monsters below ${valueOf(w.slain[w.slain.length - 1])}.`
-        : `Fresh. Blocks ${valueOf(w.card)} damage from any monster.`);
-    } else {
-      $('weapon').innerHTML = '<span class="barehanded">Barehanded</span>';
-      $('weaponHint').innerHTML = decorate('Equip a ♦ to reduce monster damage.');
-    }
+    const w = s.weapon;
+    const hint = !w ? 'Equip a ♦ to reduce monster damage.'
+      : w.slain.length ? `Usable on monsters below ${valueOf(w.slain[w.slain.length - 1])}.`
+      : `Fresh. Blocks ${valueOf(w.card)} damage from any monster.`;
+    $('weapon').innerHTML = (w
+      ? `<div class="wtilt" data-tilt><div class="wstack">${miniHTML(w.card)}${w.slain.map(c => miniHTML(c)).join('')}</div></div>`
+      : '<span class="barehanded">Barehanded</span>')
+      + `<div class="winfo">${w && w.slain.length ? `<div class="wslain"><span class="label">Slain</span><b>${w.slain.length}</b></div>` : ''}<p class="hint">${decorate(hint)}</p></div>`;
 
     // dungeon stats
     const deck = ALL_CARDS.filter(id => isAvailable(id));
@@ -910,7 +1020,7 @@
       [deck.filter(id => roleOf(id) === 'potion').length, `Potions ${inkSuit('H')}`],
       [deck.filter(id => roleOf(id) === 'weapon').length, `Weapons ${inkSuit('D')}`],
     ].map(([n, l]) => `<div><span class="n">${n}</span><span class="l">${l}</span></div>`).join('');
-    $('deckSum').textContent = `${s.used.length} used · ${dungeonLeft()} left`;
+    $('deckSum').textContent = `${s.used.length} used · ${unresolved().length} in room`;
 
     // room
     $('roomTitle').innerHTML = `Room <span class="no">${s.roomNo}</span>`;
@@ -943,6 +1053,7 @@
           `<span class="cap"><span class="role">${c.resolved ? 'Faced' : ROLE_LABEL[roleOf(id)] + ' ' + valueOf(id)}</span><span class="out ${cls}">${outHTML(txt, c.resolved)}</span></span>`;
         b.setAttribute('aria-label', `${fullName(id)}, ${ROLE_LABEL[roleOf(id)]}${c.resolved ? ', faced' : ''}`);
         b.disabled = c.resolved || !!s.over;
+        b.dataset.tilt = '';
         b.onclick = () => openActions(i);
       }
       slotsEl.appendChild(b);
@@ -1041,7 +1152,7 @@
       ? `<div class="fan${animate ? ' stacked' : ''}" role="group" aria-label="${SUITS[p.suit].name}">` + RANKS.filter(r => inDungeon(p.suit, r)).map((r, i) => {
           const id = p.suit + r;
           const ok = isAvailable(id, p.except);
-          return `<button class="fan-card${id === p.except ? ' cur' : ''}" data-rank="${r}" style="--i:${i}" aria-label="${fullName(id)}${ok ? '' : ', already out'}" ${ok ? '' : 'disabled'}>${cardHTML(id, { blind: !ok })}</button>`;
+          return `<button class="fan-card${id === p.except ? ' cur' : ''}" data-rank="${r}" data-tilt style="--i:${i}" aria-label="${fullName(id)}${ok ? '' : ', already out'}" ${ok ? '' : 'disabled'}>${cardHTML(id, { blind: !ok })}</button>`;
         }).join('') + '</div>'
       : `<div class="fan-empty"><span class="fe-title">Choose a suit</span><span class="fe-sub">${p.color ? `Pick one of the ${p.color} decks.` : 'Its cards fan out here.'}</span></div>`;
     const capDefault = p.suit ? 'Tap the card you dealt. Cards without ink are already out of play.' : 'Pick a suit, or a color to narrow the decks.';
@@ -1190,7 +1301,7 @@
     const [kj, ro] = NAMES[id];
     showSheet(`
       <div class="sheet-head ah">
-        <div class="ah-card">${cardHTML(id)}</div>
+        <div class="ah-card" data-tilt>${cardHTML(id)}</div>
         <div class="grow"><div class="eyebrow">${ROLE_LABEL[role]} · ${v}</div><h3 class="sheet-title">${fullName(id)}</h3>
           <div class="ah-name"><span lang="ja">${kj}</span>${ro}</div></div>
         <button class="close" data-close="1" aria-label="Close">${X_ICON}</button></div>
@@ -1240,6 +1351,90 @@
       </div>`, false, 'rules-sheet');
     sheet.querySelector('[data-close]').onclick = closeSheet;
   }
+
+  // ---------- Splash ----------
+  // The title card shows on every page load and new game, holds a few seconds, then lifts to reveal the table.
+  const splash = $('splash'), app = $('app'), body = document.body;
+  let splashTimers = [], ghost = null;
+  function playSplash(enter) {
+    splashTimers.forEach(clearTimeout);
+    if (ghost) { ghost.remove(); ghost = null; }
+    if (enter) {
+      // render() calls this before it redraws, so the copy still shows the last game
+      const r = app.getBoundingClientRect();
+      ghost = app.cloneNode(true);
+      ghost.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+      ghost.removeAttribute('id');
+      ghost.classList.add('ghost');
+      ghost.inert = true;
+      ghost.setAttribute('aria-hidden', 'true');
+      Object.assign(ghost.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px',
+        backgroundPosition: `${-(r.left + scrollX)}px ${-(r.top + scrollY)}px` }); // paper grain lines up with the page's
+      app.after(ghost);
+    }
+    body.classList.add('is-splash');
+    app.inert = true;
+    splash.hidden = false;
+    splash.className = 'splash';
+    void splash.offsetWidth; // restart the animations
+    splash.className = 'splash run' + (enter ? ' late enter' : '');
+    const t0 = enter ? 800 : 0; // a new game lowers the curtain first
+    splashTimers = [
+      setTimeout(() => {
+        body.classList.add('is-veiled');
+        if (ghost) { ghost.remove(); ghost = null; scrollTo(0, 0); }
+      }, t0),
+      // drop the curtain's animation once it is down, or its fill would cancel the lift's transition
+      setTimeout(() => splash.classList.remove('enter'), t0 + 200),
+      setTimeout(() => {
+        splash.classList.add('out');
+        body.classList.remove('is-veiled');
+        dealt = []; render(); // deal the room in again as it comes into view
+      }, t0 + 3600),
+      setTimeout(() => {
+        body.classList.remove('is-splash');
+        app.inert = false;
+        // an open sheet already played its entrance out of sight, so play it again
+        [backdrop, sheet].forEach(el => { el.style.animation = 'none'; void el.offsetWidth; el.style.animation = ''; });
+      }, t0 + 4150),
+      setTimeout(() => { splash.hidden = true; }, t0 + 4700),
+    ];
+  }
+  // keys wait for the table, so nothing gets picked behind the splash
+  document.addEventListener('keydown', e => { if (body.classList.contains('is-splash')) e.stopImmediatePropagation(); }, true);
+
+  // ---------- Tilt ----------
+  // Under a mouse, a card leans toward the pointer and catches the light, like a credit card turned in the hand.
+  const calm = matchMedia('(prefers-reduced-motion: reduce)');
+  let tilted = null;
+  function untilt() {
+    if (!tilted) return;
+    tilted.classList.remove('tilting');
+    ['--tx', '--ty', '--gx', '--gy'].forEach(v => tilted.style.removeProperty(v));
+    tilted = null;
+  }
+  document.addEventListener('pointermove', e => {
+    const host = e.pointerType === 'mouse' && !calm.matches ? e.target.closest('[data-tilt]') : null;
+    if (host !== tilted) untilt();
+    if (!host) return;
+    const face = host.firstElementChild, r = host.getBoundingClientRect();
+    // fan cards are rotated, so measure the pointer along the card's own axes, from -1 to 1
+    const a = (parseFloat(host.style.getPropertyValue('--rot')) || 0) * Math.PI / 180, cos = Math.cos(a), sin = Math.sin(a);
+    const dx = e.clientX - r.left - r.width / 2, dy = e.clientY - r.top - r.height / 2;
+    // a hovered card also rises, so measure from where it sits now
+    const rs = getComputedStyle(face).getPropertyValue('--rise').trim();
+    const rise = rs.endsWith('%') ? parseFloat(rs) / 100 * face.offsetHeight : parseFloat(rs) || 0;
+    const fx = face.offsetLeft + face.offsetWidth / 2 - host.offsetWidth / 2, fy = face.offsetTop + rise + face.offsetHeight / 2 - host.offsetHeight / 2;
+    const x = Math.max(-1, Math.min(1, (dx * cos + dy * sin - fx) / (face.offsetWidth / 2)));
+    const y = Math.max(-1, Math.min(1, (dy * cos - dx * sin - fy) / (face.offsetHeight / 2)));
+    host.style.setProperty('--tx', x.toFixed(3));
+    host.style.setProperty('--ty', y.toFixed(3));
+    host.style.setProperty('--gx', (50 + x * 50).toFixed(1) + '%');
+    host.style.setProperty('--gy', (50 + y * 50).toFixed(1) + '%');
+    host.classList.add('tilting');
+    tilted = host;
+  }, { passive: true });
+  document.addEventListener('pointerout', e => { if (!e.relatedTarget) untilt(); });
 
   // ---------- Wiring ----------
   $('undoBtn').onclick = undo;
