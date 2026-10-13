@@ -3,14 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>unlimited hobinichi</title>
+<title>Hobonichi A4 planner</title>
 <style>
   /* Defaults. font.css (next to this file) overrides them. */
   :root {
     --font-latin: url("fonts/BerkeleyMono-Regular.ttf");
     --font-numerals: url("fonts/SFMono-Regular.ttf");
-    --font-bengali: url("fonts/ShurjoMistu-Regular.ttf");
-    --font-bengali-strong: url("fonts/ShurjoMistu-Medium.ttf");
+    --font-numerals-bold: url("fonts/SFMono-Bold.ttf");
+    --font-bengali: url("fonts/Li Subha Letterpress Unicode.ttf");
+    --font-bengali-strong: url("fonts/Li Subha Letterpress Unicode.ttf");
   }
 </style>
 <link rel="stylesheet" href="font.css">
@@ -22,7 +23,6 @@
     --muted: #7a746a;
     --line: #ddd6ca;
     --olive: #7e7c55;
-    --red: #c53f30;
     --mono: "Planner Numerals", "Planner Latin", ui-monospace, "SF Mono", Menlo, monospace;
     --bengali: "Planner Bengali", "Noto Sans Bengali", "Bangla Sangam MN", sans-serif;
   }
@@ -56,10 +56,45 @@
   .week #week-bengali { color: var(--muted); font-size: 14px; }
   .events { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
   .events li { border: 1px solid var(--line); border-radius: 999px; padding: 1px 9px; background: var(--card); color: var(--muted); }
-  .events li.holiday { color: var(--red); border-color: #e7c0b9; }
+  .events li.holiday { color: var(--k-rest); background: var(--k-chip); border-color: transparent; }
+  .events li.observance { color: var(--k-obs); }
   .events li .bn { font-size: 13.5px; }
-  .actions { display: flex; gap: 14px; align-items: center; justify-content: flex-end; }
-  .toggle { display: flex; gap: 6px; align-items: center; color: var(--muted); cursor: pointer; }
+  .events li.holiday .bn::before, .key .k-name::before {
+    content: ""; display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: currentColor; margin-right: 5px; vertical-align: 2px;
+  }
+  .actions { display: flex; gap: 18px; align-items: center; justify-content: flex-end; }
+
+  /* on/off switches, stacked with their tracks in line */
+  .switches { display: grid; gap: 7px; justify-items: start; }
+  .switch { display: inline-flex; gap: 8px; align-items: center; color: var(--muted); cursor: pointer; user-select: none; }
+  .switch.indent { padding-left: calc(5ch + 8px); }
+  .switch input {
+    appearance: none; -webkit-appearance: none; margin: 0; flex: none; position: relative; cursor: pointer;
+    width: 34px; height: 20px; border-radius: 999px; background: #d3ccbf; transition: background .18s;
+  }
+  .switch input::after {
+    content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+    background: #fff; box-shadow: 0 1px 2px rgba(46, 43, 39, .3); transition: transform .18s;
+  }
+  .switch input:checked { background: var(--ink); }
+  .switch input:checked::after { transform: translateX(14px); }
+  .switch input:focus-visible { outline: 2px solid var(--olive); outline-offset: 2px; }
+  .switch .side { transition: color .18s; }
+  .switch .off { width: 5ch; text-align: right; }
+  body:not(.color) .switch .off, body.color .switch .on { color: var(--ink); }
+
+  /* How the PDFs mark days in each mode (same values as the renderer's palettes) */
+  body { --k-rest: #000; --k-rest-weight: 700; --k-sat: #8a8a8a; --k-obs: #6a6a6a; --k-chip: #d0d0d0; }
+  body.color { --k-rest: #c53f30; --k-rest-weight: 400; --k-sat: #3d63a0; --k-obs: #8c6410; --k-chip: #f6d8d2; }
+  .key { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 22px; padding: 14px 24px 0; color: var(--muted); }
+  .key > span { display: inline-flex; align-items: center; gap: 7px; }
+  .key b { font-weight: 400; }
+  .key .k-sun, .key .k-hol { color: var(--k-rest); font-weight: var(--k-rest-weight); }
+  .key .k-sat { color: var(--k-sat); }
+  .key .k-hol { background: var(--k-chip); border-radius: 999px; padding: 0 6px; }
+  .key .k-name { color: var(--k-rest); }
+  .key .k-obs { color: var(--k-obs); }
+  .key .bn { font-size: 13.5px; }
 
   .notice, .error {
     margin: 16px 24px 0; padding: 12px 16px; border-radius: 10px; border: 1px solid #e3cf9b; background: #fbf3dc;
@@ -91,13 +126,14 @@
   @media (max-width: 1100px) {
     .top { grid-template-columns: 1fr auto; }
     .week { grid-column: 1 / -1; }
+    .actions { grid-column: 1 / -1; }
   }
 </style>
 </head>
 <body>
 <header class="top">
   <div class="brand">
-    <h1>unlimited hobinichi <span>A4</span></h1>
+    <h1>hobonichi <span>A4</span></h1>
     <p>Pick a date to get that week's A6 daily, A5 weekly and Weeks spreads, plus the year at a glance, as A4 PDFs.</p>
   </div>
   <div class="controls">
@@ -112,7 +148,14 @@
     <ul id="week-events" class="events" hidden></ul>
   </div>
   <div class="actions">
-    <label class="toggle"><input id="tint" type="checkbox" checked> Tinted paper</label>
+    <div class="switches">
+      <label class="switch" title="Monochrome or color PDFs">
+        <span class="side off">Mono</span>
+        <input id="color" type="checkbox" role="switch" aria-label="Color">
+        <span class="side on">Color</span>
+      </label>
+      <label class="switch indent"><input id="tint" type="checkbox" role="switch" checked> Tinted paper</label>
+    </div>
     <button id="download-selected" class="primary" disabled>Download all 4</button>
   </div>
 </header>
@@ -125,6 +168,13 @@
   </div>
 </section>
 <p id="error" class="error" hidden></p>
+
+<div class="key" aria-label="How the PDFs mark days">
+  <span><b class="k-sun">7</b> Sunday</span>
+  <span><b class="k-sat">6</b> Saturday</span>
+  <span><b class="k-hol">15</b><b class="k-name bn">দুর্গাপূজা</b> holiday</span>
+  <span><b class="k-obs bn">রাখী পূর্ণিমা</b> observance</span>
+</div>
 
 <main class="cards">
   <article class="card" data-kind="daily">
@@ -409,7 +459,7 @@
   }
 
   // ---- holidays & observances ----
-  // kind: 'holiday' (shown in red) or 'observance' (label only)
+  // kind: 'holiday' (a day off) or 'observance' (marked, but not a day off)
   const LUNAR_FESTIVALS = [
     { month: 10, tithi: 5, rule: 'purvahna', name: 'সরস্বতী পূজা', kind: 'holiday' },
     { month: 10, tithi: 29, rule: 'nishita', name: 'শিবরাত্রি', kind: 'observance' },
@@ -702,8 +752,9 @@
     // Split text into runs: Bengali goes to the Bengali font, digits to the
     // numerals font, letters to the Latin font. Punctuation and spaces stay with
     // the run before them when that font has the glyph.
-    runs(str, font) {
+    runs(str, font, bold = false) {
       const bnKey = font === 'latin' ? 'bengali' : font;
+      const digitKey = bold ? 'bold' : 'numerals';
       const has = (key, cp) => this.fonts.cover[key].has(cp);
       const out = [];
       let cur = null;
@@ -711,7 +762,7 @@
         const cp = ch.codePointAt(0);
         let key;
         if (isBn(cp)) key = bnKey;
-        else if (cp >= 0x30 && cp <= 0x39) key = 'numerals';
+        else if (cp >= 0x30 && cp <= 0x39) key = digitKey;
         else if (/[A-Za-z]/.test(ch)) key = 'latin';
         else if (cur && has(cur.key, cp)) key = cur.key;
         else if (!cur && font !== 'latin' && has(bnKey, cp)) key = bnKey;
@@ -726,22 +777,22 @@
     // Sizes are given for the reference fonts; other fonts are scaled so their
     // digits / Bengali headline come out the same height.
     size(key, sz) { return sz * this.fonts.scale[key]; }
-    measure(str, size, font = 'latin') {
-      return this.runs(String(str), font).reduce((w, r) => w + shaped(this.fonts[r.key], r.text).advance * this.size(r.key, size) / MM, 0);
+    measure(str, size, font = 'latin', bold = false) {
+      return this.runs(String(str), font, bold).reduce((w, r) => w + shaped(this.fonts[r.key], r.text).advance * this.size(r.key, size) / MM, 0);
     }
     // size in (local) pt; x, y in local mm. Returns the drawn width.
-    text(str, x, y, { size = 8, font = 'latin', color = '#000000', align = 'left', valign = 'baseline', maxW = null, knockout = null, opacity } = {}) {
+    text(str, x, y, { size = 8, font = 'latin', color = '#000000', align = 'left', valign = 'baseline', maxW = null, knockout = null, opacity, bold = false } = {}) {
       if (str == null || str === '') return 0;
       str = String(str);
       let sz = size;
-      let w = this.measure(str, sz, font);
+      let w = this.measure(str, sz, font, bold);
       if (maxW && w > maxW) { sz *= maxW / w; w = maxW; }
       let x0 = align === 'center' ? x - w / 2 : align === 'right' ? x - w : x;
       const em = sz / MM;
       const mid = font === 'latin' ? 0.345 : 0.3;
       const yb = valign === 'middle' ? y + em * mid : valign === 'top' ? y + em * mid * 2 : y;
       if (knockout) this.rect(x0 - 0.35, yb - em * 0.78, w + 0.7, em * 0.95, { fill: knockout });
-      for (const r of this.runs(str, font)) {
+      for (const r of this.runs(str, font, bold)) {
         const f = this.fonts[r.key], rs = this.size(r.key, sz);
         drawShaped(this.page, f, r.text, this.X(x0), this.Y(yb), rs * this.s, hex(color), opacity);
         x0 += shaped(f, r.text).advance * rs / MM;
@@ -784,12 +835,63 @@
     pen.circle(cx, cy, r, { stroke: ink, lw });
   }
 
+  // ---- colour themes -------------------------------------------------------
+  // Each template has a colour and a monochrome palette with the same roles:
+  //   rest   Sundays and public holidays      sat    Saturdays
+  //   obs    observances (festivals that aren't days off)
+  //   badge  chip behind holiday dates        pill   the week or spread being planned
+  // Monochrome keeps them apart by value and weight instead of hue: rest days are
+  // black (bold digits, solid boxes), Saturdays light gray, holidays sit on a chip
+  // and get a dot in labels. Colour mode keeps the chips and dots too, so nothing
+  // depends on telling red from another hue. A template's mono tint is its colour
+  // paper converted to the gray of the same lightness.
+  const MONO = {
+    ink: '#1E1E1E', text: '#3C3C3C', light: '#7C7C7C', line: '#8E8E8E', grid: '#ABABAB',
+    accent: '#3A3A3A', accentText: '#FFFFFF',
+    rest: '#000000', restFill: '#1E1E1E', restText: '#FFFFFF',
+    sat: '#8A8A8A', satFill: '#D3D3D3', satText: '#1E1E1E',
+    obs: '#6A6A6A', badge: '#D0D0D0', pill: '#1E1E1E', cal: '#3C3C3C',
+    restBold: true, tags: true, tint: '#F2F2F2',
+  };
+  function palette(T, ctx) {
+    const p = ctx.mono ? { ...MONO, ...T.mono } : { ...T.color };
+    p.paper = ctx.tint ? p.tint : '#FFFFFF';
+    return p;
+  }
+
+  // A calendar date: rest days in the rest colour (bold in monochrome), Saturdays
+  // in the Saturday colour, holidays on a chip. `y` is the baseline.
+  function dateMark(pen, n, cx, y, { size, C, chipW, chipH }) {
+    const { d, wd } = Cal.ymd(n), holiday = Cal.isHoliday(n), rest = holiday || wd === 0;
+    if (holiday) {
+      const cy = y - (size / MM) * REF.digit / 2, w = Math.max(chipW, chipH);
+      pen.pill(cx - w / 2, cy - chipH / 2, w, chipH, { fill: C.badge });
+    }
+    pen.text(String(d), cx, y, { size, color: rest ? C.rest : wd === 6 ? C.sat : C.cal, align: 'center', bold: rest && C.restBold });
+  }
+
+  // A holiday or observance name. Holidays get a filled dot before the name.
+  function eventText(pen, e, x, y, { size, C, align = 'left', valign = 'baseline', knockout = null, maxW = null }) {
+    const holiday = e.kind === 'holiday';
+    let sz = size;
+    const dotGap = (s) => (holiday ? (s / MM) * 0.62 : 0);
+    let tw = pen.measure(e.name, sz, 'strong');
+    if (maxW && tw + dotGap(sz) > maxW) { sz *= maxW / (tw + dotGap(sz)); tw = pen.measure(e.name, sz, 'strong'); }
+    const em = sz / MM, gap = dotGap(sz), total = tw + gap;
+    const x0 = align === 'right' ? x - total : align === 'center' ? x - total / 2 : x;
+    const yb = valign === 'middle' ? y + em * 0.3 : y;
+    if (knockout) pen.rect(x0 - 0.4, yb - em * 0.8, total + 0.8, em * 1.02, { fill: knockout });
+    if (holiday) pen.circle(x0 + em * 0.17, yb - em * 0.3, em * 0.17, { fill: C.rest });
+    pen.text(e.name, x0 + gap, yb, { size: sz, font: 'strong', color: holiday ? C.rest : C.obs });
+    return total;
+  }
+
   // Monday-first month calendar. x/y: centre of the first column / header row.
   function miniCal(pen, o) {
-    const { x, y, colW, rowH, size, year, month, circle = [], colors: c, pillH = rowH * 0.86, pillLW = 0.45, headSize = size } = o;
+    const { x, y, colW, rowH, size, year, month, circle = [], C, pillH = rowH * 0.86, pillLW = 0.45, headSize = size } = o;
     const order = [1, 2, 3, 4, 5, 6, 0];
     order.forEach((wd, i) => {
-      pen.text(WD_BN_1[wd], x + i * colW, y, { size: headSize, font: 'bengali', color: wd === 0 ? c.sun : wd === 6 ? c.sat : c.head, align: 'center', valign: 'middle' });
+      pen.text(WD_BN_1[wd], x + i * colW, y, { size: headSize, font: 'bengali', color: wd === 0 ? C.rest : wd === 6 ? C.sat : C.cal, align: 'center', valign: 'middle' });
     });
     const first = Cal.dn(year, month, 1);
     const offset = (Cal.ymd(first).wd + 6) % 7;
@@ -804,18 +906,17 @@
       r.a = Math.min(r.a, p.col); r.b = Math.max(r.b, p.col);
       rows.set(p.row, r);
     }
+    const capH = (size / MM) * REF.digit;
+    for (let d = 1; d <= len; d++) {
+      const p = pos(d), cy = y + (p.row + 1) * rowH;
+      dateMark(pen, first + d - 1, x + p.col * colW, cy + capH / 2, { size, C, chipW: colW * 0.86, chipH: pillH * 0.82 });
+    }
     for (const [row, r] of rows) {
       const cy = y + (row + 1) * rowH;
-      pen.pill(x + r.a * colW - colW * 0.47, cy - pillH / 2, (r.b - r.a) * colW + colW * 0.94, pillH, { stroke: c.pill, lw: pillLW });
-    }
-    for (let d = 1; d <= len; d++) {
-      const n = Cal.dn(year, month, d), p = pos(d), wd = Cal.ymd(n).wd;
-      const color = Cal.isHoliday(n) ? c.holiday : wd === 0 ? c.sun : wd === 6 ? c.sat : c.text;
-      pen.text(String(d), x + p.col * colW, y + (p.row + 1) * rowH, { size, font: 'latin', color, align: 'center', valign: 'middle' });
+      pen.pill(x + r.a * colW - colW * 0.47, cy - pillH / 2, (r.b - r.a) * colW + colW * 0.94, pillH, { stroke: C.pill, lw: pillLW });
     }
   }
 
-  const eventsLabel = (events) => events.map((e) => e.name).join(' · ');
   const weekMonth = (monday) => Cal.ymd(monday + 3); // the month a week belongs to (ISO rule)
   function bengaliMonthsOf(year, month) {
     const a = Cal.bengaliDate(Cal.dn(year, month, 1)).month;
@@ -828,7 +929,7 @@
   }
   const dayKind = (n) => {
     const wd = Cal.ymd(n).wd;
-    if (Cal.isHoliday(n) || wd === 0) return 'red';
+    if (Cal.isHoliday(n) || wd === 0) return 'rest';
     return wd === 6 ? 'sat' : 'plain';
   };
 
@@ -840,13 +941,21 @@
   // ---- 1. A6 daily (Hobonichi Techo), scaled ×√2 onto each A5 half ----------
   const DAILY = {
     W: 105, H: 148, c: 3.7, cols: 26, rows: 32, gx: 4.4, gy: 4.0,
-    colors: { ink: '#45462C', text: '#53543D', accent: '#7E7C55', red: '#B4583E', line: '#9C9A7C', grid: '#A7A79A', light: '#A2A189', calRed: '#C0735E', paper: '#FFFFFF', tint: '#FBFAF4' },
+    // olive Techo ink; slate blue Saturdays and brick red rest days sit on either side of it
+    color: {
+      ink: '#45462C', text: '#53543D', light: '#A2A189', line: '#9C9A7C', grid: '#A7A79A',
+      accent: '#7E7C55', accentText: '#FFFFFF',
+      rest: '#B5452E', restFill: '#B5452E', restText: '#FFFFFF',
+      sat: '#466689', satFill: '#466689', satText: '#FFFFFF',
+      obs: '#8C6410', badge: '#F2D9D1', pill: '#45462C', cal: '#45462C',
+      restBold: false, tags: false, tint: '#FBFAF4',
+    },
+    mono: { tint: '#FAFAFA' },
   };
 
   function drawDaily(pen, n, side, ctx) {
-    const D = DAILY, c = D.c, C = D.colors;
+    const D = DAILY, c = D.c, C = palette(D, ctx), paper = C.paper;
     const { gx, gy } = D, gw = D.cols * c, gh = D.rows * c;
-    const paper = ctx.tint ? C.tint : C.paper;
     const dot = { color: C.grid, w: 0.36, dot: c / 9 };
     if (ctx.tint) pen.rect(0, 0, D.W, D.H, { fill: paper });
     grid(pen, gx, gy, D.cols, D.rows, c, dot);
@@ -856,11 +965,10 @@
       // month index tab on the outer edge
       const ty = gy + (5 + (m - 1) * 2) * c, tx = gx + gw - 0.55 * c;
       pen.rect(tx, ty, D.W - tx + 3, 2 * c, { fill: C.accent });
-      pen.text(String(m), (tx + D.W - 0.8) / 2, ty + c, { size: 8, font: 'latin', color: '#FFFFFF', align: 'center', valign: 'middle' });
+      pen.text(String(m), (tx + D.W - 0.8) / 2, ty + c, { size: 8, color: C.accentText, align: 'center', valign: 'middle' });
       miniCal(pen, {
         x: gx + gw - 2.0 - 6 * 3.0, y: gy + gh + 4.85, colW: 3.0, rowH: 2.97, size: 4.5, headSize: 4.6, year: y, month: m,
-        circle: ctx.circle || [n], pillH: 2.5, pillLW: 0.4,
-        colors: { text: C.ink, head: C.ink, sat: C.ink, sun: C.calRed, holiday: C.calRed, pill: C.ink },
+        circle: ctx.circle || [n], pillH: 2.5, pillLW: 0.4, C,
       });
     }
     if (ctx.notes) return;
@@ -872,13 +980,14 @@
     pen.rect(hx, hy, hw, hh, { fill: paper });
     for (const k of [2, 6, 8]) pen.line(hx + k * c, hy, hx + k * c, hy + 3 * c, { ...dot, color: C.line });
     pen.line(hx, hy + 3 * c, hx + hw, hy + 3 * c, { ...dot, color: C.line });
-    const fill = kind === 'sat' ? C.accent : kind === 'red' ? C.red : null;
+    const fill = kind === 'sat' ? C.satFill : kind === 'rest' ? C.restFill : null;
+    const onFill = kind === 'sat' ? C.satText : C.restText;
     if (fill) pen.rect(hx + 6 * c, hy, 2 * c, 3 * c, { fill });
     pen.rect(hx, hy, hw, hh, { stroke: C.line, lw: 0.5 });
 
     pen.text(String(m), hx + c, hy + 1.5 * c, { size: 13.4, color: C.ink, align: 'center', valign: 'middle' });
     pen.text(String(d), hx + 4 * c, hy + 1.5 * c, { size: 25, color: C.ink, align: 'center', valign: 'middle' });
-    pen.text(WD_BN[wd], hx + 7 * c, hy + 1.5 * c, { size: 9.5, font: 'strong', color: fill ? '#FFFFFF' : C.ink, align: 'center', valign: 'middle', maxW: 2 * c - 1.2 });
+    pen.text(WD_BN[wd], hx + 7 * c, hy + 1.5 * c, { size: 9.5, font: 'strong', color: fill ? onFill : C.ink, align: 'center', valign: 'middle', maxW: 2 * c - 1.2 });
     drawMoon(pen, hx + 9 * c, hy + 1.0 * c, 1.3, Cal.moonOfDay(n), { ink: C.ink, paper, lw: 0.3 });
     pen.text(String(Cal.dayOfYear(n)), hx + 9 * c, hy + 2.42 * c, { size: 5.2, color: C.text, align: 'center', valign: 'middle' });
     const b = Cal.bengaliDate(n);
@@ -890,7 +999,7 @@
 
     // holidays & observances, top right
     events.slice(0, 3).forEach((e, i) => {
-      pen.text(e.name, gx + gw - 0.3 * c, gy + (i + 0.5) * c, { size: 6.4, font: 'strong', color: e.kind === 'holiday' ? C.red : C.text, align: 'right', valign: 'middle', knockout: paper, maxW: 13 * c });
+      eventText(pen, e, gx + gw - 0.3 * c, gy + (i + 0.5) * c, { size: 6.4, C, align: 'right', valign: 'middle', knockout: paper, maxW: 13 * c });
     });
 
     // time axis 4:00 → 4:00
@@ -915,36 +1024,45 @@
   // ---- 2. A5 weekly (Hobonichi Cousin), actual size ------------------------
   const A5 = {
     c: 3.7, gx: 7.65, top: 6.2,
-    colors: { ink: '#4B4C50', navy: '#535A6C', red: '#C53F30', hour: '#8F8F8F', tick: '#7D7D7D', col: '#9A9A9A', box: '#8C8C8C', grid: '#BDBDBD', sat: '#A4A4A4', holiday: '#D9776B', light: '#8A8A8A', paper: '#FFFFFF', tint: '#FCFBF8' },
+    // Cousin navy band (also the Saturday box), signal red for rest days
+    color: {
+      ink: '#4B4C50', text: '#5A5B60', light: '#8A8A8A', line: '#9A9A9A', grid: '#BDBDBD', hour: '#8F8F8F', tick: '#7D7D7D', box: '#8C8C8C',
+      accent: '#4E5A76', accentText: '#FFFFFF',
+      rest: '#C53F30', restFill: '#C53F30', restText: '#FFFFFF',
+      sat: '#3D63A0', satFill: '#4E5A76', satText: '#FFFFFF',
+      obs: '#8C6410', badge: '#F6D8D2', pill: '#C53F30', cal: '#55565A',
+      restBold: false, tags: false, tint: '#FCFBF8',
+    },
+    mono: { hour: '#7E7E7E', tick: '#6A6A6A', box: '#7A7A7A', grid: '#B2B2B2', tint: '#FBFBFB' },
   };
   const a5GridTop = () => A5.top + 5 * A5.c;
   const a5GridBottom = () => a5GridTop() + 48 * A5.c;
 
   function a5DayColumn(pen, x, n, last, ctx) {
-    const c = A5.c, C = A5.colors, top = A5.top, gt = a5GridTop(), gb = a5GridBottom();
-    const paper = ctx.tint ? C.tint : C.paper;
+    const c = A5.c, C = palette(A5, ctx), top = A5.top, gt = a5GridTop(), gb = a5GridBottom();
     const dot = { color: C.grid, w: 0.4, dot: c / 7 };
-    // grid with hour labels (5 → 4)
+    // grid with hour labels (5 → 4). The first cell is a gutter: each hour sits
+    // centred in it, and its tick starts on the first grid line.
     for (let i = 0; i <= 48; i++) {
       const yy = gt + i * c, hourLine = i % 2 === 0 && i < 48;
-      pen.line(hourLine ? x + 1.15 * c : x, yy, x + 9 * c, yy, dot);
+      pen.line(hourLine ? x + 1.34 * c : x, yy, x + 9 * c, yy, dot);
       if (hourLine) {
-        pen.text(String((5 + i / 2) % 24), x + 0.62 * c, yy, { size: 5.4, color: C.hour, align: 'right', valign: 'middle' });
-        pen.line(x + 0.8 * c, yy, x + 1.08 * c, yy, { color: C.tick, w: 0.75 });
+        pen.text(String((5 + i / 2) % 24), x + 0.5 * c, yy, { size: 4.7, color: C.hour, align: 'center', valign: 'middle' });
+        pen.line(x + c, yy, x + 1.27 * c, yy, { color: C.tick, w: 0.75 });
       }
     }
     for (let k = 1; k <= (last ? 9 : 8); k++) pen.line(x + k * c, gt, x + k * c, gb, dot);
-    pen.line(x, top, x, gb, { color: C.col, w: 0.7 });
+    pen.line(x, top, x, gb, { color: C.line, w: 0.7 });
 
     // date box
     const { d, wd } = Cal.ymd(n), kind = dayKind(n);
-    const fill = kind === 'sat' ? C.navy : kind === 'red' ? C.red : null;
-    pen.rect(x, top, 7 * c, 2 * c, { fill: paper });
+    const fill = kind === 'sat' ? C.satFill : kind === 'rest' ? C.restFill : null;
+    pen.rect(x, top, 7 * c, 2 * c, { fill: C.paper });
     if (fill) pen.rect(x + 4 * c, top, 3 * c, 2 * c, { fill });
     pen.line(x + 4 * c, top, x + 4 * c, top + 2 * c, { color: C.box, w: 0.6 });
     pen.rect(x, top, 7 * c, 2 * c, { stroke: C.box, lw: 0.6 });
     pen.text(String(d), x + 2 * c, top + c, { size: 16, color: C.ink, align: 'center', valign: 'middle' });
-    const fc = fill ? '#FFFFFF' : C.ink;
+    const fc = fill ? (kind === 'sat' ? C.satText : C.restText) : C.ink;
     const w1 = pen.measure(WD_BN[wd], 7.6, 'strong'), w2 = pen.measure(WD_EN[wd], 4.6), gap = 0.9;
     const sx = x + 5.5 * c - (w1 + gap + w2) / 2;
     pen.text(WD_BN[wd], sx, top + c, { size: 7.6, font: 'strong', color: fc, valign: 'middle' });
@@ -952,58 +1070,65 @@
 
     // holidays under the box, Bengali date + tithi just above the grid
     Cal.eventsOn(n).slice(0, 3).forEach((e, i) => {
-      pen.text(e.name, x + 0.3 * c, top + 2 * c + 3.1 + i * 2.9, { size: 6.2, font: 'strong', color: e.kind === 'holiday' ? C.red : C.light, maxW: 8.5 * c });
+      eventText(pen, e, x + 0.3 * c, top + 2 * c + 3.1 + i * 2.9, { size: 6.2, C, maxW: 8.5 * c });
     });
     const b = Cal.bengaliDate(n);
     pen.text(`${bnNum(b.day)} ${Cal.BN_MONTHS[b.month]} · ${Cal.tithiLabel(Cal.tithiOfDay(n).tithi)}`, x + 0.3 * c, gt - 2.5, { size: 5.4, font: 'bengali', color: C.light, maxW: 8.5 * c });
   }
 
   function drawA5Left(pen, monday, ctx) {
-    const c = A5.c, C = A5.colors, gx = A5.gx, top = A5.top, gt = a5GridTop(), gb = a5GridBottom();
-    if (ctx.tint) pen.rect(0, 0, HALF, SHEET_H, { fill: C.tint });
+    const c = A5.c, C = palette(A5, ctx), gx = A5.gx, top = A5.top, gt = a5GridTop();
+    if (ctx.tint) pen.rect(0, 0, HALF, SHEET_H, { fill: C.paper });
     const thu = weekMonth(monday), wk = Cal.isoWeek(monday);
     // info column
     const dot = { color: C.grid, w: 0.4, dot: c / 7 };
     grid(pen, gx, gt + 10 * c, 9, 38, c, dot);
-    // navy band: year / Bangabda / week on the left, the month on the right,
+    // band: year / Bangabda / week on the left, the month on the right,
     // both centred on the band's middle line
     const bandH = 4 * c, mid = top + bandH / 2, right = gx + 9 * c;
-    pen.rect(-1, top, right + 1, bandH, { fill: C.navy });
+    pen.rect(-1, top, right + 1, bandH, { fill: C.accent });
     const cap = (size) => (size / MM) * REF.digit;
     const gap1 = 3.45, gap2 = 4.3; // baseline to baseline, mm
     const b1 = mid - (cap(10.5) + gap1 + gap2) / 2 + cap(10.5);
-    const w1 = pen.text(String(thu.y), gx, b1, { size: 10.5, color: '#FFFFFF' });
-    const w2 = pen.text(bangabdaOfWeek(monday), gx, b1 + gap1, { size: 7.4, font: 'strong', color: '#FFFFFF' });
-    const w3 = pen.text(`${Cal.ordinal(wk.week)} week`, gx, b1 + gap1 + gap2, { size: 7, color: '#FFFFFF' });
+    const w1 = pen.text(String(thu.y), gx, b1, { size: 10.5, color: C.accentText });
+    const w2 = pen.text(bangabdaOfWeek(monday), gx, b1 + gap1, { size: 7.4, font: 'strong', color: C.accentText });
+    const w3 = pen.text(`${Cal.ordinal(wk.week)} week`, gx, b1 + gap1 + gap2, { size: 7, color: C.accentText });
     const pad = (bandH - cap(35)) / 2;
     const room = right - pad - (gx + Math.max(w1, w2, w3) + 2.4);
     const mw = pen.measure(String(thu.m), 35);
     const msize = mw > room ? 35 * room / mw : 35;
-    pen.text(String(thu.m), right - pad, mid + cap(msize) / 2, { size: msize, color: '#FFFFFF', align: 'right' });
+    pen.text(String(thu.m), right - pad, mid + cap(msize) / 2, { size: msize, color: C.accentText, align: 'right' });
     const bm = pen.text(bengaliMonthsOf(thu.y, thu.m), gx, top + 5.3 * c, { size: 8, font: 'bengali', color: C.ink, maxW: 6 * c });
     pen.text(MONTH_EN[thu.m - 1], gx + bm + 2.6, top + 5.3 * c, { size: 7.4, color: C.ink });
     miniCal(pen, {
       x: gx + 1.25, y: top + 7.7 * c, colW: 4.0, rowH: 4.0, size: 6, headSize: 6.2, year: thu.y, month: thu.m,
-      circle: [0, 1, 2, 3, 4, 5, 6].map((k) => monday + k), pillH: 3.5, pillLW: 0.55,
-      colors: { text: '#555557', head: '#555557', sat: C.sat, sun: C.red, holiday: C.holiday, pill: C.red },
+      circle: [0, 1, 2, 3, 4, 5, 6].map((k) => monday + k), pillH: 3.5, pillLW: 0.55, C,
     });
     for (let k = 0; k < 3; k++) a5DayColumn(pen, gx + (k + 1) * 9 * c, monday + k, k === 2, ctx);
   }
   function drawA5Right(pen, monday, ctx) {
     const c = A5.c;
-    if (ctx.tint) pen.rect(0, 0, HALF, SHEET_H, { fill: A5.colors.tint });
+    if (ctx.tint) pen.rect(0, 0, HALF, SHEET_H, { fill: palette(A5, ctx).paper });
     for (let k = 0; k < 4; k++) a5DayColumn(pen, A5.gx + k * 9 * c, monday + 3 + k, k === 3, ctx);
   }
 
   // ---- 3. Weeks (Hobonichi Weeks) -----------------------------------------
   const WK = {
     g: 3.8, top: 13.2, rowCells: 6, lx: 10.2, labelCells: 2.5, writeCells: 32, rx: 7.2, rightCells: 34,
-    colors: { ink: '#4F4741', red: '#C8475E', line: '#9F978B', dots: '#B3AB9B', faint: '#EDEAE3', faintTint: '#E6DFCD', grid: '#AAA38F', tab: '#635C5A', sat: '#9A9486', sun: '#D46F84', light: '#8C847A', paper: '#FFFFFF', tint: '#F5EFDD' },
+    // warm sepia ink on cream; crimson rest days, cobalt Saturdays
+    color: {
+      ink: '#4F4741', text: '#5C534C', light: '#8C847A', line: '#9F978B', dots: '#B3AB9B', faint: '#EDEAE3', faintTint: '#E6DFCD', grid: '#AAA38F',
+      accent: '#635C5A', accentText: '#FFFFFF',
+      rest: '#C2405A', restFill: '#C2405A', restText: '#FFFFFF',
+      sat: '#3F64A0', satFill: '#3F64A0', satText: '#FFFFFF',
+      obs: '#8C6410', badge: '#F4D6DC', pill: '#4F4741', cal: '#4F4741',
+      restBold: false, tags: false, tint: '#F5EFDD',
+    },
+    mono: { dots: '#ABABAB', faint: '#E6E6E6', faintTint: '#DBDBDB', grid: '#A9A9A9', tint: '#EFEFEF' },
   };
 
   function drawWeeksLeft(pen, monday, ctx) {
-    const g = WK.g, C = WK.colors, x0 = WK.lx, top = WK.top, rh = WK.rowCells * g;
-    const paper = ctx.tint ? C.tint : C.paper;
+    const g = WK.g, C = palette(WK, ctx), paper = C.paper, x0 = WK.lx, top = WK.top, rh = WK.rowCells * g;
     if (ctx.tint) pen.rect(0, 0, HALF, SHEET_H, { fill: paper });
     const lw = WK.labelCells * g, wx = x0 + lw, ww = WK.writeCells * g, xe = wx + ww;
     const thu = weekMonth(monday), wk = Cal.isoWeek(monday);
@@ -1031,19 +1156,26 @@
 
     for (let k = 0; k < 7; k++) {
       const n = monday + k, yy = top + k * rh, cx = x0 + lw / 2;
-      const { d, wd } = Cal.ymd(n), red = dayKind(n) === 'red';
-      const col = red ? C.red : C.ink;
-      pen.text(String(d), cx, yy + 0.275 * rh, { size: 18, color: col, align: 'center', maxW: lw - 0.6 });
+      const { d, wd } = Cal.ymd(n), kind = dayKind(n), rest = kind === 'rest';
+      // colour: rest days and Saturdays in their colour; monochrome: tags carry it
+      const col = rest ? C.rest : kind === 'sat' && !C.tags ? C.sat : C.ink;
+      pen.text(String(d), cx, yy + 0.275 * rh, { size: 18, color: col, align: 'center', maxW: lw - 0.6, bold: rest && C.restBold });
       pen.text(WD_BN[wd], cx, yy + 0.455 * rh, { size: 7.6, font: 'strong', color: col, align: 'center', maxW: lw - 1.0 });
-      pen.text(WD_EN[wd], cx, yy + 0.578 * rh, { size: 5, color: col, align: 'center' });
+      const ay = yy + 0.578 * rh;
+      if (C.tags && kind !== 'plain') {
+        const tw = pen.measure(WD_EN[wd], 5) + 1.9, th = 2.5, cy = ay - (5 / MM) * REF.digit / 2;
+        pen.pill(cx - tw / 2, cy - th / 2, tw, th, { fill: rest ? C.restFill : C.satFill });
+        pen.text(WD_EN[wd], cx, ay, { size: 5, color: rest ? C.restText : C.satText, align: 'center' });
+      } else {
+        pen.text(WD_EN[wd], cx, ay, { size: 5, color: col, align: 'center' });
+      }
       drawMoon(pen, cx, yy + 0.715 * rh, 1.4, Cal.moonOfDay(n), { ink: C.ink, paper, lw: 0.35 });
       pen.text(Cal.tithiLabel(Cal.tithiOfDay(n).tithi, { short: true }), cx, yy + 0.918 * rh, { size: 5.4, font: 'bengali', color: C.ink, align: 'center', maxW: lw - 0.8 });
       const b = Cal.bengaliDate(n);
       pen.text(`${bnNum(b.day)} ${Cal.BN_MONTHS[b.month]}`, xe - 1.2, yy + 3.3, { size: 5.4, font: 'bengali', color: C.light, align: 'right', knockout: paper });
-      const events = Cal.eventsOn(n);
-      if (events.length) {
-        const holiday = events.some((e) => e.kind === 'holiday');
-        pen.text(eventsLabel(events), xe - 1.2, yy + rh - 1.7, { size: 6, font: 'strong', color: holiday ? C.red : C.ink, align: 'right', knockout: paper, maxW: ww * 0.9 });
+      let ex = xe - 1.2;
+      for (const e of Cal.eventsOn(n).reverse()) {
+        ex -= eventText(pen, e, ex, yy + rh - 1.7, { size: 6, C, align: 'right', knockout: paper, maxW: ww * 0.6 }) + 2.4;
       }
     }
 
@@ -1057,35 +1189,38 @@
   }
 
   function drawWeeksRight(pen, monday, ctx) {
-    const g = WK.g, C = WK.colors, x0 = WK.rx, top = WK.top, rows = 7 * WK.rowCells;
-    const paper = ctx.tint ? C.tint : C.paper;
-    if (ctx.tint) pen.rect(0, 0, HALF, SHEET_H, { fill: paper });
+    const g = WK.g, C = palette(WK, ctx), x0 = WK.rx, top = WK.top, rows = 7 * WK.rowCells;
+    if (ctx.tint) pen.rect(0, 0, HALF, SHEET_H, { fill: C.paper });
     const xe = x0 + WK.rightCells * g, ye = top + rows * g;
     grid(pen, x0, top, WK.rightCells, rows, g, { color: C.grid, w: 0.46, dot: g / 6 });
     pen.line(x0 + 6 * g, top, x0 + 6 * g, ye, { color: C.line, w: 0.6 });
     const thu = weekMonth(monday);
     // month index tab
     const ty = top + 2 * g + (thu.m - 1) * 2.5 * g, tx = xe - 0.8 * g;
-    pen.rect(tx, ty, HALF - tx + 3, 2.5 * g, { fill: C.tab });
-    pen.text(String(thu.m), (tx + HALF - 1) / 2, ty + 1.25 * g, { size: 8.6, color: '#FFFFFF', align: 'center', valign: 'middle' });
+    pen.rect(tx, ty, HALF - tx + 3, 2.5 * g, { fill: C.accent });
+    pen.text(String(thu.m), (tx + HALF - 1) / 2, ty + 1.25 * g, { size: 8.6, color: C.accentText, align: 'center', valign: 'middle' });
     // attribution and month calendar under the grid
     attribution(pen, ctx.quote, x0, ctx.quoteBottom || ye + 23, { size: 8.4, color: C.ink });
     miniCal(pen, {
       x: xe - 1.8 - 6 * 3.7, y: ye + 5.0, colW: 3.7, rowH: 3.7, size: 5.6, headSize: 5.8, year: thu.y, month: thu.m,
-      circle: [0, 1, 2, 3, 4, 5, 6].map((k) => monday + k), pillH: 3.1, pillLW: 0.45,
-      colors: { text: C.ink, head: C.ink, sat: C.sat, sun: C.sun, holiday: C.sun, pill: C.ink },
+      circle: [0, 1, 2, 3, 4, 5, 6].map((k) => monday + k), pillH: 3.1, pillLW: 0.45, C,
     });
   }
 
-
   // ---- 4. Yearly (Hobonichi Weeks year-at-a-glance) -------------------------
   const YR = {
-    colors: { ink: '#3F362F', text: '#4F463F', red: '#C9432E', sat: '#8F877E', rule: '#5A5149', line: '#A39B8C', light: '#8C847A', pill: '#4B4038', paper: '#FFFFFF', tint: '#F3EEE3' },
+    // espresso ink on oatmeal; vermilion rest days, cobalt Saturdays
+    color: {
+      ink: '#3F362F', text: '#4F463F', light: '#8C847A', line: '#A39B8C', rule: '#5A5149',
+      rest: '#C4402C', sat: '#3F64A0', badge: '#F6D9D3', pill: '#4B4038', cal: '#4F463F',
+      restBold: false, tint: '#F3EEE3',
+    },
+    mono: { rule: '#4A4A4A', line: '#9A9A9A', cal: '#333333', tint: '#EEEEEE' },
   };
   const DOW_EN1 = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-  function yearMonth(pen, x, y, w, year, month, o) {
-    const C = YR.colors, colW = w / 7, cx = (i) => x + colW * (i + 0.5);
+  function yearMonth(pen, x, y, w, year, month, o, C) {
+    const colW = w / 7, cx = (i) => x + colW * (i + 0.5);
     if (o.big) {
       pen.text(String(month), x + w / 2, y + o.numY, { size: o.numSize, color: C.ink, align: 'center' });
       const name = MONTH_EN[month - 1], bn = bengaliMonthsOf(year, month), gap = 1.5;
@@ -1096,18 +1231,17 @@
     } else {
       pen.text(MON_EN[month - 1], x + w / 2, y + o.nameY, { size: o.nameSize, color: C.ink, align: 'center' });
     }
-    DOW_EN1.forEach((l, i) => pen.text(l, cx(i), y + o.headY, { size: o.headSize, color: i === 6 ? C.red : i === 5 ? C.sat : C.ink, align: 'center' }));
+    DOW_EN1.forEach((l, i) => pen.text(l, cx(i), y + o.headY, { size: o.headSize, color: i === 6 ? C.rest : i === 5 ? C.sat : C.ink, align: 'center' }));
     pen.line(x, y + o.ruleY, x + w, y + o.ruleY, { color: C.rule, w: 0.4 });
     const first = Cal.dn(year, month, 1), offset = (Cal.ymd(first).wd + 6) % 7, len = Cal.daysInMonth(year, month);
     for (let d = 1; d <= len; d++) {
-      const n = first + d - 1, k = offset + d - 1, wd = Cal.ymd(n).wd;
-      const color = wd === 0 || Cal.isHoliday(n) ? C.red : wd === 6 ? C.sat : C.text;
-      pen.text(String(d), cx(k % 7), y + o.dateY + Math.floor(k / 7) * o.rowH, { size: o.dateSize, color, align: 'center' });
+      const k = offset + d - 1;
+      dateMark(pen, first + d - 1, cx(k % 7), y + o.dateY + Math.floor(k / 7) * o.rowH, { size: o.dateSize, C, chipW: colW * 0.78, chipH: o.rowH * 0.84 });
     }
   }
 
-  function yearHeader(pen, x, y, w, year, label, big) {
-    const C = YR.colors, size = big ? 22 : 15.5;
+  function yearHeader(pen, x, y, w, year, label, big, C) {
+    const size = big ? 22 : 15.5;
     const yw = pen.text(String(year), x, y, { size, color: C.ink });
     pen.text(`${bnNum(year - 594)}–${bnNum(year - 593)} বঙ্গাব্দ`, x + yw + 2.6, y, { size: big ? 7.4 : 6.4, font: 'bengali', color: C.light });
     const ts = big ? 7.4 : 6.4, ph = big ? 5.2 : 4.4, pw = pen.measure(label, ts) + 4.4;
@@ -1117,12 +1251,12 @@
   }
 
   function drawYearlyLeft(pen, year, ctx) {
-    const C = YR.colors, x0 = 10, x1 = HALF - 7, w = x1 - x0;
-    if (ctx.tint) pen.rect(0, 0, HALF, SHEET_H, { fill: C.tint });
-    yearHeader(pen, x0, 15.5, w, year, 'This Year', true);
+    const C = palette(YR, ctx), x0 = 10, x1 = HALF - 7, w = x1 - x0;
+    if (ctx.tint) pen.rect(0, 0, HALF, SHEET_H, { fill: C.paper });
+    yearHeader(pen, x0, 15.5, w, year, 'This Year', true, C);
     const gap = 8, bw = (w - 2 * gap) / 3, top = 20.5, pitch = 33.6;
     const o = { big: true, numY: 4.6, numSize: 10.5, nameY: 8.4, nameSize: 5.8, headY: 12.3, headSize: 5.2, ruleY: 13.5, dateY: 17.0, rowH: 3.2, dateSize: 6.2 };
-    for (let i = 0; i < 12; i++) yearMonth(pen, x0 + (i % 3) * (bw + gap), top + Math.floor(i / 3) * pitch, bw, year, i + 1, o);
+    for (let i = 0; i < 12; i++) yearMonth(pen, x0 + (i % 3) * (bw + gap), top + Math.floor(i / 3) * pitch, bw, year, i + 1, o, C);
     const iy = top + 4 * pitch + 6.5;
     pen.text(`${year} Important Dates`, x0, iy, { size: 9.4, color: C.ink });
     pen.text('Write your important events and national holidays here.', x0, iy + 4.6, { size: 5.6, color: C.text });
@@ -1135,12 +1269,12 @@
   }
 
   function drawYearlyRight(pen, year, ctx) {
-    const C = YR.colors, bw = 36, gap = 6.5, w = 3 * bw + 2 * gap, x0 = 7 + (HALF - 17 - w) / 2;
-    if (ctx.tint) pen.rect(0, 0, HALF, SHEET_H, { fill: C.tint });
+    const C = palette(YR, ctx), bw = 36, gap = 6.5, w = 3 * bw + 2 * gap, x0 = 7 + (HALF - 17 - w) / 2;
+    if (ctx.tint) pen.rect(0, 0, HALF, SHEET_H, { fill: C.paper });
     const o = { big: false, nameY: 2.8, nameSize: 5.2, headY: 5.7, headSize: 4.3, ruleY: 6.6, dateY: 9.3, rowH: 2.42, dateSize: 4.6 };
     for (const [y, label, top] of [[year - 1, 'Last Year', 13], [year + 1, 'Next Year', 111]]) {
-      yearHeader(pen, x0, top, w, y, label, false);
-      for (let i = 0; i < 12; i++) yearMonth(pen, x0 + (i % 3) * (bw + gap), top + 4 + Math.floor(i / 3) * 21.9, bw, y, i + 1, o);
+      yearHeader(pen, x0, top, w, y, label, false, C);
+      for (let i = 0; i < 12; i++) yearMonth(pen, x0 + (i % 3) * (bw + gap), top + 4 + Math.floor(i / 3) * 21.9, bw, y, i + 1, o, C);
     }
   }
 
@@ -1165,14 +1299,16 @@
     doc.registerFontkit(global.fontkit);
     const fonts = { cover: {}, scale: {} };
     const embedded = new Map();
-    for (const key of ['latin', 'numerals', 'bengali', 'strong']) {
-      const bytes = fontBytes[key] || (key === 'numerals' ? fontBytes.latin : fontBytes.bengali);
+    const fallback = { numerals: 'latin', bold: 'numerals', strong: 'bengali' };
+    for (const key of ['latin', 'numerals', 'bold', 'bengali', 'strong']) {
+      let bytes = fontBytes[key];
+      for (let k = key; !bytes && fallback[k]; k = fallback[k]) bytes = fontBytes[fallback[k]];
       const info = fontInfo(bytes);
       // fontkit's subsetter is only reliable for TrueType outlines
       if (!embedded.has(bytes)) embedded.set(bytes, await doc.embedFont(bytes, { subset: !info.cff }));
       fonts[key] = embedded.get(bytes);
       fonts.cover[key] = new Set(fonts[key].getCharacterSet());
-      fonts.scale[key] = key === 'latin' || key === 'numerals' ? REF.digit / info.digit : REF.matra / (info.matra || info.digit * 0.88);
+      fonts.scale[key] = key === 'bengali' || key === 'strong' ? REF.matra / (info.matra || info.digit * 0.88) : REF.digit / info.digit;
     }
     doc.setTitle(title);
     doc.setAuthor('Hobonichi-style planner');
@@ -1204,9 +1340,9 @@
       const [L1, R1] = halves(page, fonts, s, DAILY.H);
       const left = monday + 2 * k, right = left + 1;
       const spread = k < 3 ? [left, right] : [left];
-      drawDaily(L1, left, 'left', { tint: opts.tint });
-      if (k < 3) drawDaily(R1, right, 'right', { tint: opts.tint, circle: spread });
-      else drawDaily(R1, left, 'right', { tint: opts.tint, circle: spread, notes: true });
+      drawDaily(L1, left, 'left', { tint: opts.tint, mono: opts.mono });
+      if (k < 3) drawDaily(R1, right, 'right', { tint: opts.tint, mono: opts.mono, circle: spread });
+      else drawDaily(R1, left, 'right', { tint: opts.tint, mono: opts.mono, circle: spread, notes: true });
       foldMarks(page, fonts);
     }
     return doc.save();
@@ -1215,8 +1351,8 @@
     const { doc, fonts } = await newDoc(fontBytes, `A5 Weekly — ${weekTitle(monday)}`);
     const page = addSheet(doc);
     const [L1, R1] = halves(page, fonts);
-    drawA5Left(L1, monday, { tint: opts.tint });
-    drawA5Right(R1, monday, { tint: opts.tint });
+    drawA5Left(L1, monday, { tint: opts.tint, mono: opts.mono });
+    drawA5Right(R1, monday, { tint: opts.tint, mono: opts.mono });
     foldMarks(page, fonts);
     return doc.save();
   }
@@ -1224,7 +1360,7 @@
     const { doc, fonts } = await newDoc(fontBytes, `Weeks — ${weekTitle(monday)}`);
     const page = addSheet(doc);
     const [L1, R1] = halves(page, fonts);
-    const ctx = { tint: opts.tint };
+    const ctx = { tint: opts.tint, mono: opts.mono };
     drawWeeksLeft(L1, monday, ctx);
     drawWeeksRight(R1, monday, ctx);
     foldMarks(page, fonts);
@@ -1235,8 +1371,8 @@
     const { doc, fonts } = await newDoc(fontBytes, `Yearly — ${year}`);
     const page = addSheet(doc);
     const [L1, R1] = halves(page, fonts);
-    drawYearlyLeft(L1, year, { tint: opts.tint });
-    drawYearlyRight(R1, year, { tint: opts.tint });
+    drawYearlyLeft(L1, year, { tint: opts.tint, mono: opts.mono });
+    drawYearlyRight(R1, year, { tint: opts.tint, mono: opts.mono });
     foldMarks(page, fonts);
     return doc.save();
   }
@@ -1272,6 +1408,7 @@
   const ROLES = [
     { key: 'latin', css: '--font-latin', what: 'English letters', styles: ['Regular', 'Book', 'Roman', 'Normal', 'Text', 'Medium'] },
     { key: 'numerals', css: '--font-numerals', what: 'digits', optional: 'latin', styles: ['Regular', 'Book', 'Roman', 'Normal', 'Text', 'Medium'] },
+    { key: 'bold', css: '--font-numerals-bold', what: 'bold digits', optional: 'numerals', styles: ['Bold', 'Semibold', 'SemiBold', 'Heavy', 'Black', 'Medium'] },
     { key: 'bengali', css: '--font-bengali', what: 'Bengali', styles: ['Regular', 'Book', 'Normal', 'Roman', 'Text', 'Medium'] },
     { key: 'strong', css: '--font-bengali-strong', what: 'Bengali (strong)', optional: 'bengali', styles: ['Medium', 'SemiBold', 'Semibold', 'DemiBold', 'Bold', 'Regular'] },
   ];
@@ -1425,14 +1562,15 @@
     const stillMissing = missing().filter((r) => !r.optional);
     if (stillMissing.length) return { ok: false, missing: stillMissing, permission };
     for (const r of ROLES) if (!found[r.key] && r.optional) found[r.key] = found[r.optional];
-    for (const key of ['latin', 'numerals', 'bengali', 'strong']) {
+    const KEYS = ROLES.map((r) => r.key);
+    for (const key of KEYS) {
       try { window.Planner.fontInfo(found[key].bytes); } catch (err) { return { ok: false, error: `${found[key].label}: ${err.message}` }; }
     }
     if (!window.Planner.fontInfo(found.bengali.bytes).hasBengali) {
       return { ok: false, error: `"${found.bengali.label}" has no Bengali letters. Point --font-bengali in font.css at a Bengali font.` };
     }
     const fonts = {};
-    for (const key of ['latin', 'numerals', 'bengali', 'strong']) fonts[key] = found[key].bytes;
+    for (const key of KEYS) fonts[key] = found[key].bytes;
     return { ok: true, fonts, labels: found };
   }
 
@@ -1443,6 +1581,7 @@
     for (const f of pageFaces) document.fonts.delete(f);
     pageFaces = [
       new FontFace('Planner Numerals', fonts.numerals, { unicodeRange: 'U+0030-0039' }),
+      new FontFace('Planner Numerals', fonts.bold, { unicodeRange: 'U+0030-0039', weight: '700' }),
       new FontFace('Planner Latin', fonts.latin),
       new FontFace('Planner Bengali', fonts.bengali, { weight: '400' }),
       new FontFace('Planner Bengali', fonts.strong, { weight: '500' }),
@@ -1537,6 +1676,8 @@
     const card = $(`.card[data-kind="${key}"]`);
     card.classList.toggle('busy', busy);
     $('.veil', card).textContent = veil;
+    // while rebuilding, the old file must not be downloaded by mistake
+    for (const b of $$('footer button', card)) b.disabled = busy || !state.results[key];
     if (label != null) $('.status', card).textContent = label;
   }
   const kb = (bytes) => (bytes < 1048576 ? `${Math.round(bytes / 1024)} KB` : `${(bytes / 1048576).toFixed(1)} MB`);
@@ -1547,8 +1688,9 @@
     const snap = { day: state.day, monday: state.monday };
     describeWeek(snap.monday);
     if (!state.fonts) return;
-    const tint = $('#tint').checked;
-    const todo = KINDS.filter((k) => state.built[k.key] !== `${k.id(snap)}|${tint}`);
+    const tint = $('#tint').checked, mono = !$('#color').checked;
+    const tag = (k) => `${k.id(snap)}|${tint}|${mono}`;
+    const todo = KINDS.filter((k) => state.built[k.key] !== tag(k));
     for (const k of todo) setBusy(k.key, true, 'Building…');
     $('#download-selected').disabled = true;
     for (const k of todo) {
@@ -1556,7 +1698,7 @@
       if (token !== state.token) return;
       let bytes;
       try {
-        bytes = await k.build(snap, state.fonts, { tint });
+        bytes = await k.build(snap, state.fonts, { tint, mono });
       } catch (err) {
         console.error(err);
         setBusy(k.key, false, `Failed: ${err.message}`);
@@ -1566,8 +1708,8 @@
       const old = state.results[k.key];
       const blob = new Blob([bytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
-      state.results[k.key] = { url, name: k.name(snap) };
-      state.built[k.key] = `${k.id(snap)}|${tint}`;
+      state.results[k.key] = { url, name: mono ? k.name(snap) : k.name(snap).replace(/\.pdf$/, '_color.pdf') };
+      state.built[k.key] = tag(k);
       $(`.card[data-kind="${k.key}"] iframe`).src = `${url}#view=FitH&navpanes=0`;
       setBusy(k.key, false, kb(blob.size));
       if (old) setTimeout(() => URL.revokeObjectURL(old.url), 5000);
@@ -1627,6 +1769,9 @@
     }
     const tint = localStorage.getItem('planner:tint');
     if (tint != null) $('#tint').checked = tint === '1';
+    $('#color').checked = localStorage.getItem('planner:color') === '1';
+    const showMode = () => document.body.classList.toggle('color', $('#color').checked);
+    showMode();
 
     $('#date').addEventListener('change', (e) => setDate(dayOf(e.target.value)));
     $('#prev').addEventListener('click', () => setDate(dayOf($('#date').value) - 7));
@@ -1634,6 +1779,11 @@
     $('#today').addEventListener('click', () => setDate(todayN()));
     $('#tint').addEventListener('change', (e) => {
       localStorage.setItem('planner:tint', e.target.checked ? '1' : '0');
+      schedule();
+    });
+    $('#color').addEventListener('change', (e) => {
+      localStorage.setItem('planner:color', e.target.checked ? '1' : '0');
+      showMode();
       schedule();
     });
     $('#download-selected').addEventListener('click', downloadSelected);

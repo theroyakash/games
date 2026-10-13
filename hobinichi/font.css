@@ -9,6 +9,7 @@
 :root {
   --font-latin:          url("fonts/BerkeleyMono-Regular.ttf"); /* English letters */
   --font-numerals:       url("fonts/SFMono-Regular.ttf");       /* digits 0-9 */
+  --font-numerals-bold:  url("fonts/SFMono-Bold.ttf");          /* Sunday & holiday dates, monochrome */
   --font-bengali:        url("fonts/Li Subha Letterpress Unicode.ttf"); /* Bengali text */
   --font-bengali-strong: url("fonts/Li Subha Letterpress Unicode.ttf"); /* weekday names, holidays */
 }
