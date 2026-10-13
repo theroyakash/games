@@ -918,13 +918,43 @@
   }
 
   const weekMonth = (monday) => Cal.ymd(monday + 3); // the month a week belongs to (ISO rule)
+  // A week that runs into a new month is split into one part per month. The A5
+  // and Weeks spreads then print one sheet per part, and the days outside a
+  // sheet's part keep their grid but no date. `ctx.part` is null otherwise.
+  function monthParts(monday) {
+    const parts = [];
+    for (let k = 0; k < 7; k++) {
+      const n = monday + k, { y, m } = Cal.ymd(n), last = parts[parts.length - 1];
+      if (last && last.y === y && last.m === m) last.days.push(n);
+      else parts.push({ y, m, days: [n] });
+    }
+    return parts;
+  }
+  const sheetParts = (monday) => { const parts = monthParts(monday); return parts.length > 1 ? parts : [null]; };
+  const shows = (ctx, n) => !ctx.part || ctx.part.days.includes(n);
+  const sheetMonth = (monday, ctx) => ctx.part || weekMonth(monday);
+  const sheetDays = (monday, ctx) => (ctx.part ? ctx.part.days : [0, 1, 2, 3, 4, 5, 6].map((k) => monday + k));
+  // A6 daily: two days per sheet, Monday first. The 1st of a month always opens
+  // a sheet, so when the month before ends on a left page its right page stays
+  // empty. A lone left page at the end of the week gets a notes page.
+  function dailySheets(monday) {
+    const spots = [];
+    for (let k = 0; k < 7; k++) {
+      const n = monday + k;
+      if (k > 0 && Cal.ymd(n).d === 1 && spots.length % 2) spots.push(null);
+      spots.push(n);
+    }
+    const sheets = [];
+    for (let i = 0; i < spots.length; i += 2) sheets.push([spots[i], spots[i + 1] ?? null]);
+    return sheets;
+  }
   function bengaliMonthsOf(year, month) {
     const a = Cal.bengaliDate(Cal.dn(year, month, 1)).month;
     const b = Cal.bengaliDate(Cal.dn(year, month, Cal.daysInMonth(year, month))).month;
     return a === b ? Cal.BN_MONTHS[a] : `${Cal.BN_MONTHS[a]}–${Cal.BN_MONTHS[b]}`;
   }
-  function bangabdaOfWeek(monday) {
-    const a = Cal.bangabda(monday), b = Cal.bangabda(monday + 6);
+  function bangabdaOf(days) {
+    const a = Cal.bangabda(days[0]), b = Cal.bangabda(days[days.length - 1]);
     return a === b ? `${bnNum(a)} বঙ্গাব্দ` : `${bnNum(a)}–${bnNum(b)} বঙ্গাব্দ`;
   }
   const dayKind = (n) => {
@@ -1054,13 +1084,14 @@
     for (let k = 1; k <= (last ? 9 : 8); k++) pen.line(x + k * c, gt, x + k * c, gb, dot);
     pen.line(x, top, x, gb, { color: C.line, w: 0.7 });
 
-    // date box
-    const { d, wd } = Cal.ymd(n), kind = dayKind(n);
-    const fill = kind === 'sat' ? C.satFill : kind === 'rest' ? C.restFill : null;
+    // date box; on days that belong to the other month's sheet only its outline
+    const { d, wd } = Cal.ymd(n), kind = dayKind(n), blank = !shows(ctx, n);
+    const fill = blank ? null : kind === 'sat' ? C.satFill : kind === 'rest' ? C.restFill : null;
     pen.rect(x, top, 7 * c, 2 * c, { fill: C.paper });
     if (fill) pen.rect(x + 4 * c, top, 3 * c, 2 * c, { fill });
     pen.line(x + 4 * c, top, x + 4 * c, top + 2 * c, { color: C.box, w: 0.6 });
     pen.rect(x, top, 7 * c, 2 * c, { stroke: C.box, lw: 0.6 });
+    if (blank) return;
     pen.text(String(d), x + 2 * c, top + c, { size: 16, color: C.ink, align: 'center', valign: 'middle' });
     const fc = fill ? (kind === 'sat' ? C.satText : C.restText) : C.ink;
     const w1 = pen.measure(WD_BN[wd], 7.6, 'strong'), w2 = pen.measure(WD_EN[wd], 4.6), gap = 0.9;
@@ -1079,7 +1110,7 @@
   function drawA5Left(pen, monday, ctx) {
     const c = A5.c, C = palette(A5, ctx), gx = A5.gx, top = A5.top, gt = a5GridTop();
     if (ctx.tint) pen.rect(0, 0, HALF, SHEET_H, { fill: C.paper });
-    const thu = weekMonth(monday), wk = Cal.isoWeek(monday);
+    const thu = sheetMonth(monday, ctx), wk = Cal.isoWeek(monday);
     // info column
     const dot = { color: C.grid, w: 0.4, dot: c / 7 };
     grid(pen, gx, gt + 10 * c, 9, 38, c, dot);
@@ -1091,7 +1122,7 @@
     const gap1 = 3.45, gap2 = 4.3; // baseline to baseline, mm
     const b1 = mid - (cap(10.5) + gap1 + gap2) / 2 + cap(10.5);
     const w1 = pen.text(String(thu.y), gx, b1, { size: 10.5, color: C.accentText });
-    const w2 = pen.text(bangabdaOfWeek(monday), gx, b1 + gap1, { size: 7.4, font: 'strong', color: C.accentText });
+    const w2 = pen.text(bangabdaOf(sheetDays(monday, ctx)), gx, b1 + gap1, { size: 7.4, font: 'strong', color: C.accentText });
     const w3 = pen.text(`${Cal.ordinal(wk.week)} week`, gx, b1 + gap1 + gap2, { size: 7, color: C.accentText });
     const pad = (bandH - cap(35)) / 2;
     const room = right - pad - (gx + Math.max(w1, w2, w3) + 2.4);
@@ -1131,13 +1162,13 @@
     const g = WK.g, C = palette(WK, ctx), paper = C.paper, x0 = WK.lx, top = WK.top, rh = WK.rowCells * g;
     if (ctx.tint) pen.rect(0, 0, HALF, SHEET_H, { fill: paper });
     const lw = WK.labelCells * g, wx = x0 + lw, ww = WK.writeCells * g, xe = wx + ww;
-    const thu = weekMonth(monday), wk = Cal.isoWeek(monday);
+    const thu = sheetMonth(monday, ctx), wk = Cal.isoWeek(monday), days = sheetDays(monday, ctx);
 
     // header
     const hy = top - 3.4;
     let hx = x0 + pen.text(String(thu.m), x0, hy, { size: 15, color: C.ink }) + 3.2;
     hx += pen.text(`${MONTH_EN[thu.m - 1]} ${thu.y}`, hx, hy, { size: 6.4, color: C.ink }) + 3.2;
-    pen.text(`${bangabdaOfWeek(monday)}  ${bengaliMonthsOf(thu.y, thu.m)}`, hx, hy, { size: 6.8, font: 'bengali', color: C.ink });
+    pen.text(`${bangabdaOf(days)}  ${bengaliMonthsOf(thu.y, thu.m)}`, hx, hy, { size: 6.8, font: 'bengali', color: C.ink });
     pen.text(`${Cal.ordinal(wk.week)} WEEK`, xe, hy, { size: 6.4, color: C.ink, align: 'right' });
 
     // faint writing grid
@@ -1156,6 +1187,7 @@
 
     for (let k = 0; k < 7; k++) {
       const n = monday + k, yy = top + k * rh, cx = x0 + lw / 2;
+      if (!shows(ctx, n)) continue; // the other month's sheet has this day
       const { d, wd } = Cal.ymd(n), kind = dayKind(n), rest = kind === 'rest';
       // colour: rest days and Saturdays in their colour; monochrome: tags carry it
       const col = rest ? C.rest : kind === 'sat' && !C.tags ? C.sat : C.ink;
@@ -1179,9 +1211,11 @@
       }
     }
 
-    // today's words (attribution continues on the right page)
-    const weekEvents = [0, 1, 2, 3, 4, 5, 6].flatMap((k) => Cal.eventsOn(monday + k));
-    const q = Quotes.quoteFor(monday + 2, weekEvents);
+    // today's words (attribution continues on the right page). The second
+    // sheet of a split week gets a different quote from the first.
+    const pick = ctx.part ? days[Math.floor((days.length - 1) / 2)] : monday + 2;
+    let q = Quotes.quoteFor(pick, days.flatMap((n) => Cal.eventsOn(n)));
+    for (let i = 1; q === ctx.avoid && i < 50; i++) q = Quotes.quoteFor(pick + i);
     const qy = top + 7 * rh + 6.0;
     q.t.slice(0, 4).forEach((t, i) => pen.text(t, x0, qy + i * 4.4, { size: 8.4, font: 'bengali', color: C.ink, maxW: xe - x0 }));
     ctx.quote = q;
@@ -1194,7 +1228,7 @@
     const xe = x0 + WK.rightCells * g, ye = top + rows * g;
     grid(pen, x0, top, WK.rightCells, rows, g, { color: C.grid, w: 0.46, dot: g / 6 });
     pen.line(x0 + 6 * g, top, x0 + 6 * g, ye, { color: C.line, w: 0.6 });
-    const thu = weekMonth(monday);
+    const thu = sheetMonth(monday, ctx);
     // month index tab
     const ty = top + 2 * g + (thu.m - 1) * 2.5 * g, tx = xe - 0.8 * g;
     pen.rect(tx, ty, HALF - tx + 3, 2.5 * g, { fill: C.accent });
@@ -1334,36 +1368,41 @@
 
   async function buildDaily(monday, fontBytes, opts = {}) {
     const { doc, fonts } = await newDoc(fontBytes, `A6 Daily — ${weekTitle(monday)}`);
-    const s = HALF / DAILY.W;
-    for (let k = 0; k < 4; k++) {
+    const s = HALF / DAILY.W, base = { tint: opts.tint, mono: opts.mono };
+    for (const [left, right] of dailySheets(monday)) {
       const page = addSheet(doc);
       const [L1, R1] = halves(page, fonts, s, DAILY.H);
-      const left = monday + 2 * k, right = left + 1;
-      const spread = k < 3 ? [left, right] : [left];
-      drawDaily(L1, left, 'left', { tint: opts.tint, mono: opts.mono });
-      if (k < 3) drawDaily(R1, right, 'right', { tint: opts.tint, mono: opts.mono, circle: spread });
-      else drawDaily(R1, left, 'right', { tint: opts.tint, mono: opts.mono, circle: spread, notes: true });
+      drawDaily(L1, left, 'left', base);
+      if (right != null) drawDaily(R1, right, 'right', { ...base, circle: [left, right] });
+      else drawDaily(R1, left, 'right', { ...base, circle: [left], notes: true });
       foldMarks(page, fonts);
     }
     return doc.save();
   }
   async function buildA5(monday, fontBytes, opts = {}) {
     const { doc, fonts } = await newDoc(fontBytes, `A5 Weekly — ${weekTitle(monday)}`);
-    const page = addSheet(doc);
-    const [L1, R1] = halves(page, fonts);
-    drawA5Left(L1, monday, { tint: opts.tint, mono: opts.mono });
-    drawA5Right(R1, monday, { tint: opts.tint, mono: opts.mono });
-    foldMarks(page, fonts);
+    for (const part of sheetParts(monday)) {
+      const page = addSheet(doc);
+      const [L1, R1] = halves(page, fonts);
+      const ctx = { tint: opts.tint, mono: opts.mono, part };
+      drawA5Left(L1, monday, ctx);
+      drawA5Right(R1, monday, ctx);
+      foldMarks(page, fonts);
+    }
     return doc.save();
   }
   async function buildWeeks(monday, fontBytes, opts = {}) {
     const { doc, fonts } = await newDoc(fontBytes, `Weeks — ${weekTitle(monday)}`);
-    const page = addSheet(doc);
-    const [L1, R1] = halves(page, fonts);
-    const ctx = { tint: opts.tint, mono: opts.mono };
-    drawWeeksLeft(L1, monday, ctx);
-    drawWeeksRight(R1, monday, ctx);
-    foldMarks(page, fonts);
+    let avoid = null;
+    for (const part of sheetParts(monday)) {
+      const page = addSheet(doc);
+      const [L1, R1] = halves(page, fonts);
+      const ctx = { tint: opts.tint, mono: opts.mono, part, avoid };
+      drawWeeksLeft(L1, monday, ctx);
+      drawWeeksRight(R1, monday, ctx);
+      foldMarks(page, fonts);
+      avoid = ctx.quote;
+    }
     return doc.save();
   }
 
@@ -1377,7 +1416,7 @@
     return doc.save();
   }
 
-  global.Planner = { buildDaily, buildA5, buildWeeks, buildYearly, weekTitle, fontInfo, bnNum, WD_BN, MON_EN };
+  global.Planner = { buildDaily, buildA5, buildWeeks, buildYearly, weekTitle, fontInfo, monthParts, dailySheets, bnNum, WD_BN, MON_EN };
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
 <script>
@@ -1669,6 +1708,18 @@
       }
     }
     list.hidden = !list.children.length;
+
+    // card subtitles: a week that runs into a new month prints a sheet per month
+    const parts = Planner.monthParts(monday), sheets = Planner.dailySheets(monday);
+    const split = parts.length > 1, months = parts.map((p) => MON[p.m - 1]).join(' and ');
+    const gap = sheets.some(([, right], i) => right == null && i < sheets.length - 1);
+    const first = split && Cal.ymd(parts[1].days[0]);
+    const meta = {
+      daily: `${sheets.length} sheets · ${gap ? `${first.d} ${MON[first.m - 1]} starts a new sheet` : 'Mon to Sun + notes'}`,
+      a5: split ? `2 sheets · ${months}` : '1 sheet · actual A5 size',
+      weeks: split ? `2 sheets · ${months}` : '1 sheet · week + memo',
+    };
+    for (const [key, text] of Object.entries(meta)) $(`.card[data-kind="${key}"] .meta`).textContent = text;
   }
 
   // ---- building & previews -------------------------------------------------
