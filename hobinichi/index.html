@@ -1,0 +1,1664 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>unlimited hobinichi</title>
+<style>
+  /* Defaults. font.css (next to this file) overrides them. */
+  :root {
+    --font-latin: url("fonts/BerkeleyMono-Regular.ttf");
+    --font-numerals: url("fonts/SFMono-Regular.ttf");
+    --font-bengali: url("fonts/ShurjoMistu-Regular.ttf");
+    --font-bengali-strong: url("fonts/ShurjoMistu-Medium.ttf");
+  }
+</style>
+<link rel="stylesheet" href="font.css">
+<style>
+  :root {
+    --bg: #efebe3;
+    --card: #fffdf9;
+    --ink: #2e2b27;
+    --muted: #7a746a;
+    --line: #ddd6ca;
+    --olive: #7e7c55;
+    --red: #c53f30;
+    --mono: "Planner Numerals", "Planner Latin", ui-monospace, "SF Mono", Menlo, monospace;
+    --bengali: "Planner Bengali", "Noto Sans Bengali", "Bangla Sangam MN", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--ink); font: 13px/1.5 var(--mono); -webkit-font-smoothing: antialiased; }
+  .bn { font-family: var(--bengali); }
+  button, input, label.button { font: inherit; color: inherit; }
+  button, label.button {
+    border: 1px solid var(--line); background: var(--card); border-radius: 8px; padding: 7px 12px;
+    cursor: pointer; white-space: nowrap; line-height: 1.2;
+  }
+  button:hover, label.button:hover { border-color: #b9b0a1; }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--ink); color: #fffdf9; border-color: var(--ink); }
+  button.link { border: 0; background: none; padding: 0; text-decoration: underline; color: var(--muted); }
+
+  .top {
+    position: sticky; top: 0; z-index: 2; background: rgba(239, 235, 227, .94); backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--line); padding: 16px 24px;
+    display: grid; grid-template-columns: auto auto 1fr auto; gap: 16px 28px; align-items: center;
+  }
+  .brand h1 { margin: 0; font-size: 15px; letter-spacing: .02em; }
+  .brand h1 span { background: var(--olive); color: #fff; padding: 1px 6px; border-radius: 4px; margin-left: 4px; }
+  .brand p { margin: 2px 0 0; color: var(--muted); max-width: 38ch; }
+  .controls { display: flex; gap: 6px; align-items: center; }
+  .controls input[type=date] {
+    border: 1px solid var(--line); background: var(--card); border-radius: 8px; padding: 6px 10px; min-width: 150px;
+  }
+  .week #week-title { font-weight: 600; }
+  .week #week-bengali { color: var(--muted); font-size: 14px; }
+  .events { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+  .events li { border: 1px solid var(--line); border-radius: 999px; padding: 1px 9px; background: var(--card); color: var(--muted); }
+  .events li.holiday { color: var(--red); border-color: #e7c0b9; }
+  .events li .bn { font-size: 13.5px; }
+  .actions { display: flex; gap: 14px; align-items: center; justify-content: flex-end; }
+  .toggle { display: flex; gap: 6px; align-items: center; color: var(--muted); cursor: pointer; }
+
+  .notice, .error {
+    margin: 16px 24px 0; padding: 12px 16px; border-radius: 10px; border: 1px solid #e3cf9b; background: #fbf3dc;
+  }
+  .notice p { margin: 0 0 10px; }
+  .notice .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .error { border-color: #e7c0b9; background: #fbe9e5; color: #8c2b20; }
+
+  .cards {
+    display: grid; gap: 20px; padding: 20px 24px 8px;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 640px), 1fr));
+  }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+  .card > header { display: flex; align-items: baseline; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+  .card > header label { display: flex; gap: 7px; align-items: center; cursor: pointer; }
+  .card .meta { color: var(--muted); }
+  .card .status { margin-left: auto; color: var(--muted); }
+  .viewer { position: relative; aspect-ratio: 297 / 226; background: #d9d4cb; }
+  .viewer iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  .viewer .veil {
+    position: absolute; inset: 0; display: none; place-items: center; color: var(--muted);
+    background: repeating-linear-gradient(-45deg, #e6e1d8 0 12px, #ebe6dd 12px 24px);
+  }
+  .card.busy .veil { display: grid; }
+  .card > footer { display: flex; gap: 8px; padding: 10px 14px; }
+
+  .foot { padding: 8px 24px 28px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 18px; }
+
+  @media (max-width: 1100px) {
+    .top { grid-template-columns: 1fr auto; }
+    .week { grid-column: 1 / -1; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <h1>unlimited hobinichi <span>A4</span></h1>
+    <p>Pick a date to get that week's A6 daily, A5 weekly and Weeks spreads, plus the year at a glance, as A4 PDFs.</p>
+  </div>
+  <div class="controls">
+    <button id="prev" title="Previous week (←)" aria-label="Previous week">←</button>
+    <input id="date" type="date" aria-label="Date">
+    <button id="next" title="Next week (→)" aria-label="Next week">→</button>
+    <button id="today">Today</button>
+  </div>
+  <div class="week">
+    <div id="week-title"></div>
+    <div id="week-bengali" class="bn"></div>
+    <ul id="week-events" class="events" hidden></ul>
+  </div>
+  <div class="actions">
+    <label class="toggle"><input id="tint" type="checkbox" checked> Tinted paper</label>
+    <button id="download-selected" class="primary" disabled>Download all 4</button>
+  </div>
+</header>
+
+<section id="fonts-panel" class="notice" hidden>
+  <p id="fonts-message"></p>
+  <div class="row">
+    <button id="fonts-allow" class="primary" hidden>Allow access to installed fonts</button>
+    <label class="button">Choose font files…<input id="fonts-pick" type="file" accept=".ttf,.otf" multiple hidden></label>
+  </div>
+</section>
+<p id="error" class="error" hidden></p>
+
+<main class="cards">
+  <article class="card" data-kind="daily">
+    <header>
+      <label><input class="pick" type="checkbox" checked> <strong>A6 Daily</strong></label>
+      <span class="meta">4 sheets · Mon to Sun + notes</span>
+      <span class="status"></span>
+    </header>
+    <div class="viewer"><iframe title="A6 daily PDF"></iframe><div class="veil">Building…</div></div>
+    <footer><button class="download">Download</button><button class="open">Open in new tab</button></footer>
+  </article>
+  <article class="card" data-kind="a5">
+    <header>
+      <label><input class="pick" type="checkbox" checked> <strong>A5 Weekly</strong></label>
+      <span class="meta">1 sheet · actual A5 size</span>
+      <span class="status"></span>
+    </header>
+    <div class="viewer"><iframe title="A5 weekly PDF"></iframe><div class="veil">Building…</div></div>
+    <footer><button class="download">Download</button><button class="open">Open in new tab</button></footer>
+  </article>
+  <article class="card" data-kind="weeks">
+    <header>
+      <label><input class="pick" type="checkbox" checked> <strong>Weeks</strong></label>
+      <span class="meta">1 sheet · week + memo</span>
+      <span class="status"></span>
+    </header>
+    <div class="viewer"><iframe title="Weeks PDF"></iframe><div class="veil">Building…</div></div>
+    <footer><button class="download">Download</button><button class="open">Open in new tab</button></footer>
+  </article>
+  <article class="card" data-kind="yearly">
+    <header>
+      <label><input class="pick" type="checkbox" checked> <strong>Yearly</strong></label>
+      <span class="meta">1 sheet · this year + last and next</span>
+      <span class="status"></span>
+    </header>
+    <div class="viewer"><iframe title="Yearly PDF"></iframe><div class="veil">Building…</div></div>
+    <footer><button class="download">Download</button><button class="open">Open in new tab</button></footer>
+  </article>
+</main>
+
+<footer class="foot">
+  <span id="fonts-in-use"></span>
+  <button id="fonts-reload" class="link">Re-read fonts</button>
+  <span>Holidays: West Bengal, computed. Bengali dates follow the Surya Siddhanta panjika.</span>
+  <span>Downloads go to the browser's download folder.</span>
+</footer>
+
+<script src="lib/regenerator-runtime.js"></script>
+<script src="lib/pdf-lib.min.js"></script>
+<script src="lib/fontkit.umd.min.js"></script>
+<script src="lib/astronomy.browser.min.js"></script>
+<script src="fonts/fonts.js"></script>
+<script>
+/* ==========================================================================
+   Calendar engine: civil days, moon phases, tithi, Bengali (Bangabda) dates,
+   amanta lunar months and Bengali / Indian holidays. All civil dates are IST.
+   Astronomy comes from astronomy-engine (global `Astronomy`).
+   ========================================================================== */
+(function (global) {
+  'use strict';
+  const A = global.Astronomy;
+  if (!A) return;
+  const DAY = 86400000;
+  const IST = 330; // minutes east of UTC
+  const KOLKATA = new A.Observer(22.5726, 88.3639, 10);
+  const SIGHTING = new A.Observer(26.8467, 80.9462, 120); // Lucknow: reference for crescent sighting
+  const SYNODIC = 29.530588853;
+  const LUNATION0 = Date.UTC(2000, 0, 6, 18, 14); // Meeus lunation k = 0
+
+  // ---- civil day numbers (days since 1970-01-01, IST) ----
+  const dn = (y, m, d) => Math.floor(Date.UTC(y, m - 1, d) / DAY);
+  const ymd = (n) => {
+    const t = new Date(n * DAY);
+    return { y: t.getUTCFullYear(), m: t.getUTCMonth() + 1, d: t.getUTCDate(), wd: t.getUTCDay() };
+  };
+  const istDay = (date) => Math.floor((date.getTime() + IST * 60000) / DAY);
+  const istTime = (n, hours) => new Date(n * DAY + (hours * 60 - IST) * 60000);
+  const mondayOf = (n) => n - ((ymd(n).wd + 6) % 7);
+  const isLeap = (y) => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+  const daysInMonth = (y, m) => [31, isLeap(y) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m - 1];
+  const dayOfYear = (n) => { const { y } = ymd(n); return n - dn(y, 1, 1) + 1; };
+  function isoWeek(n) {
+    const thursday = mondayOf(n) + 3;
+    const y = ymd(thursday).y;
+    return { week: Math.floor((thursday - dn(y, 1, 1)) / 7) + 1, year: y };
+  }
+  const ordinal = (k) => {
+    const s = (k % 100 >= 11 && k % 100 <= 13) ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[k % 10] || 'th');
+    return k + s;
+  };
+
+  // ---- sun & moon helpers ----
+  const memo = new Map();
+  const cached = (key, fn) => { if (!memo.has(key)) memo.set(key, fn()); return memo.get(key); };
+
+  function riseSet(observer, tag, n, dir) {
+    return cached(`rs:${tag}:${n}:${dir}`, () => {
+      const r = A.SearchRiseSet(A.Body.Sun, observer, dir, istTime(n, dir > 0 ? 0 : 6), 1.2);
+      return r ? r.date : istTime(n, dir > 0 ? 6 : 18);
+    });
+  }
+  const DELHI = new A.Observer(28.6139, 77.209, 216);
+  const sunrise = (n) => riseSet(KOLKATA, 'kol', n, +1);
+  const sunset = (n) => riseSet(KOLKATA, 'kol', n, -1);
+
+  // Lahiri (Chitrapaksha) ayanamsa, IAU 2006 precession from the 1956 definition.
+  function ayanamsa(date) {
+    const T = A.MakeTime(date).tt / 36525;
+    return 23.857071 + (5028.796195 * T + 1.1054348 * T * T) / 3600;
+  }
+  const siderealSun = (date) => (A.SunPosition(date).elon - ayanamsa(date) + 720) % 360;
+  const elongation = (date) => A.MoonPhase(date); // moon − sun, 0..360
+
+  function nextPhase(angle, from, days = 32) {
+    const r = A.SearchMoonPhase(angle % 360, from, days);
+    return r ? r.date : null;
+  }
+
+  // ---- Bengali solar calendar (as printed in West Bengal panjikas) ----
+  // Sankrantis follow the Surya Siddhanta; a month begins on the civil day of the
+  // first Kolkata sunrise after its sankranti.
+  const BN_MONTHS = ['বৈশাখ', 'জ্যৈষ্ঠ', 'আষাঢ়', 'শ্রাবণ', 'ভাদ্র', 'আশ্বিন', 'কার্তিক', 'অগ্রহায়ণ', 'পৌষ', 'মাঘ', 'ফাল্গুন', 'চৈত্র'];
+  // Approximate Gregorian (month, day) of each sign's sankranti, Mesha first.
+  const SANKRANTI_APPROX = [[4, 14], [5, 15], [6, 15], [7, 16], [8, 17], [9, 17], [10, 17], [11, 16], [12, 16], [1, 14], [2, 13], [3, 14]];
+  const SS_YEAR = 1577917828 / 4320000;          // sidereal year, days
+  const SS_EPOCH = 588465.5 - 75.7683 / 360;     // Kali epoch, midnight at Ujjain (JD, UT)
+  const SS_APOGEE = 77.11;                       // sun's mandocca, degrees
+  const RAD = Math.PI / 180;
+  const jdOf = (date) => date.getTime() / DAY + 2440587.5;
+  const dateOfJd = (jd) => new Date((jd - 2440587.5) * DAY);
+  function ssSun(jd) {
+    const mean = (((jd - SS_EPOCH) / SS_YEAR) % 1) * 360;
+    const k = (mean - SS_APOGEE) * RAD;
+    const epicycle = 14 - (20 / 60) * Math.abs(Math.sin(k));
+    return (mean - Math.asin((epicycle / 360) * Math.sin(k)) / RAD + 360) % 360;
+  }
+  function ssSankranti(sign, approx) {
+    let lo = jdOf(approx) - 8, hi = jdOf(approx) + 8;
+    const f = (jd) => ((ssSun(jd) - 30 * sign + 540) % 360) - 180;
+    for (let i = 0; i < 50; i++) { const mid = (lo + hi) / 2; if (f(mid) < 0) lo = mid; else hi = mid; }
+    return dateOfJd((lo + hi) / 2);
+  }
+
+  function sankrantisOfYear(y) {
+    return cached(`sk:${y}`, () => {
+      const list = [];
+      for (let r = 0; r < 12; r++) {
+        const [m, d] = SANKRANTI_APPROX[r];
+        const time = ssSankranti(r, istTime(dn(y, m, d), 12));
+        const day = istDay(time);
+        const monthStart = time < sunrise(day) ? day : day + 1;
+        const bsYear = r <= 8 ? y - 593 : y - 594;
+        list.push({ sign: r, time, day, monthStart, month: r, bsYear });
+      }
+      return list.sort((a, b) => a.day - b.day);
+    });
+  }
+
+  function bengaliDate(n) {
+    const { y } = ymd(n);
+    const starts = [...sankrantisOfYear(y - 1), ...sankrantisOfYear(y)].filter((s) => s.monthStart <= n);
+    const s = starts[starts.length - 1];
+    const nextStarts = [...sankrantisOfYear(y), ...sankrantisOfYear(y + 1)].filter((x) => x.monthStart > n);
+    const next = nextStarts[0];
+    return { day: n - s.monthStart + 1, month: s.month, year: s.bsYear, length: next.monthStart - s.monthStart, lastDay: next.monthStart - 1 === n };
+  }
+  const bangabda = (n) => bengaliDate(n).year;
+
+  // ---- tithi & amanta lunar months ----
+  const TITHI_BN = ['প্রতিপদ', 'দ্বিতীয়া', 'তৃতীয়া', 'চতুর্থী', 'পঞ্চমী', 'ষষ্ঠী', 'সপ্তমী', 'অষ্টমী', 'নবমী', 'দশমী', 'একাদশী', 'দ্বাদশী', 'ত্রয়োদশী', 'চতুর্দশী'];
+  const LUNAR_BN = ['চৈত্র', 'বৈশাখ', 'জ্যৈষ্ঠ', 'আষাঢ়', 'শ্রাবণ', 'ভাদ্র', 'আশ্বিন', 'কার্তিক', 'অগ্রহায়ণ', 'পৌষ', 'মাঘ', 'ফাল্গুন'];
+
+  const tithiAt = (date) => Math.floor(elongation(date) / 12) + 1; // 1..30
+  function tithiOfDay(n) {
+    return cached(`tithi:${n}`, () => {
+      const t = tithiAt(sunrise(n));
+      return { tithi: t, paksha: t <= 15 ? 'shukla' : 'krishna' };
+    });
+  }
+  function tithiLabel(t, { short = false } = {}) {
+    if (t === 15) return 'পূর্ণিমা';
+    if (t === 30) return 'অমাবস্যা';
+    const name = TITHI_BN[(t - 1) % 15];
+    if (short) return name;
+    return (t <= 15 ? 'শুক্লা ' : 'কৃষ্ণা ') + name;
+  }
+
+  // New moons whose start lies in [fromDay, toDay].
+  function newMoonsBetween(fromDay, toDay) {
+    return cached(`nm:${fromDay}:${toDay}`, () => {
+      const out = [];
+      let t = nextPhase(0, istTime(fromDay, 0), 31);
+      while (t && istDay(t) <= toDay) { out.push(t); t = nextPhase(0, new Date(t.getTime() + DAY), 31); }
+      return out;
+    });
+  }
+
+  // Amanta lunar months starting around year y (with adhika detection).
+  function lunarMonthsOfYear(y) {
+    return cached(`lm:${y}`, () => {
+      const moons = newMoonsBetween(dn(y - 1, 11, 1), dn(y + 1, 2, 15));
+      const months = [];
+      for (let i = 0; i + 1 < moons.length; i++) {
+        const r1 = Math.floor(siderealSun(moons[i]) / 30);
+        const r2 = Math.floor(siderealSun(moons[i + 1]) / 30);
+        months.push({ start: moons[i], end: moons[i + 1], index: (r1 + 1) % 12, adhika: r1 === r2 });
+      }
+      return months;
+    });
+  }
+
+  // Interval [start, end) of tithi `t` inside a lunar month.
+  function tithiInterval(month, t) {
+    const start = t === 1 ? month.start : nextPhase(12 * (t - 1), new Date(month.start.getTime() - 2 * 3600000), 32);
+    const end = t === 30 ? month.end : nextPhase(12 * t, start, 3);
+    return { start, end };
+  }
+
+  const dayWindow = (n, kind) => {
+    const r = sunrise(n), s = sunset(n), len = s - r;
+    switch (kind) {
+      case 'purvahna': return [r, new Date(r.getTime() + len / 2)];
+      case 'madhyahna': return [new Date(r.getTime() + len * 2 / 5), new Date(r.getTime() + len * 3 / 5)];
+      case 'aparahna': return [new Date(r.getTime() + len * 3 / 5), new Date(r.getTime() + len * 4 / 5)];
+      case 'pradosh': return [s, new Date(s.getTime() + 2.4 * 3600000)];
+      default: return null;
+    }
+  };
+
+  // Choose the civil day on which a tithi is observed, by the given kala rule.
+  function observeDay({ start, end }, rule) {
+    const first = istDay(start) - 1, last = istDay(end) + 1;
+    const days = [];
+    for (let n = first; n <= last; n++) days.push(n);
+    const within = (t) => t >= start && t < end;
+    const udaya = () => days.find((n) => within(sunrise(n))) ?? istDay(start);
+    if (rule === 'udaya') return udaya();
+    if (rule === 'udaya-delhi') return days.find((n) => within(riseSet(DELHI, 'del', n, +1))) ?? udaya();
+    if (rule === 'sunset') return days.find((n) => within(sunset(n))) ?? udaya();
+    if (rule === 'nishita') {
+      const mid = (n) => new Date((sunset(n).getTime() + sunrise(n + 1).getTime()) / 2);
+      return days.find((n) => within(mid(n))) ?? udaya();
+    }
+    let best = null, bestOverlap = 0;
+    for (const n of days) {
+      const [a, b] = dayWindow(n, rule);
+      const overlap = Math.min(b, end) - Math.max(a, start);
+      if (overlap > bestOverlap + 60000) { best = n; bestOverlap = overlap; }
+    }
+    return best ?? udaya();
+  }
+
+  // ---- Islamic months (India: crescent sighted the evening after conjunction) ----
+  function crescentVisible(evening, conj) {
+    const ageH = (evening - conj) / 3600000;
+    if (ageH < 0) return false;
+    const eq = A.Equator(A.Body.Moon, evening, SIGHTING, true, true);
+    const alt = A.Horizon(evening, SIGHTING, eq.ra, eq.dec, 'normal').altitude;
+    return ageH >= 20 && alt >= 6;
+  }
+  function islamicMonthStart(k) {
+    return cached(`hijri:${k}`, () => {
+      const approx = new Date(LUNATION0 + k * SYNODIC * DAY);
+      const conj = nextPhase(0, new Date(approx.getTime() - 3 * DAY), 7);
+      const d0 = istDay(conj);
+      for (let n = d0; n < d0 + 4; n++) {
+        const ss = riseSet(SIGHTING, 'lko', n, -1);
+        if (crescentVisible(ss, conj)) return n + 1;
+      }
+      return d0 + 2;
+    });
+  }
+  const hijriOf = (k) => { const M = 17037 + k; return { year: Math.floor(M / 12) + 1, month: (M % 12) + 1 }; };
+
+  function easter(y) {
+    const a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4;
+    const f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3);
+    const h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4;
+    const l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
+    const month = Math.floor((h + l - 7 * m + 114) / 31), day = ((h + l - 7 * m + 114) % 31) + 1;
+    return dn(y, month, day);
+  }
+
+  // ---- holidays & observances ----
+  // kind: 'holiday' (shown in red) or 'observance' (label only)
+  const LUNAR_FESTIVALS = [
+    { month: 10, tithi: 5, rule: 'purvahna', name: 'সরস্বতী পূজা', kind: 'holiday' },
+    { month: 10, tithi: 29, rule: 'nishita', name: 'শিবরাত্রি', kind: 'observance' },
+    { month: 11, tithi: 15, rule: 'udaya', name: 'দোলযাত্রা', kind: 'holiday' },
+    { month: 0, tithi: 9, rule: 'madhyahna', name: 'রামনবমী', kind: 'holiday' },
+    { month: 0, tithi: 13, rule: 'udaya', name: 'মহাবীর জয়ন্তী', kind: 'holiday' },
+    { month: 1, tithi: 3, rule: 'purvahna', name: 'অক্ষয় তৃতীয়া', kind: 'observance' },
+    { month: 1, tithi: 15, rule: 'udaya', name: 'বুদ্ধ পূর্ণিমা', kind: 'holiday' },
+    { month: 2, tithi: 6, rule: 'udaya', name: 'জামাইষষ্ঠী', kind: 'observance' },
+    { month: 3, tithi: 2, rule: 'udaya', name: 'রথযাত্রা', kind: 'observance' },
+    { month: 4, tithi: 15, rule: 'udaya', name: 'রাখী পূর্ণিমা', kind: 'observance' },
+    { month: 4, tithi: 23, rule: 'udaya', name: 'জন্মাষ্টমী', kind: 'holiday' },
+    { month: 5, tithi: 30, rule: 'udaya', name: 'মহালয়া', kind: 'holiday' },
+    { month: 6, tithi: 7, rule: 'udaya', name: 'মহাসপ্তমী', kind: 'holiday' },
+    { month: 6, tithi: 8, rule: 'udaya', name: 'মহাষ্টমী', kind: 'holiday' },
+    { month: 6, tithi: 9, rule: 'aparahna', name: 'মহানবমী', kind: 'holiday' },
+    { month: 6, tithi: 10, rule: 'aparahna', name: 'বিজয়া দশমী', kind: 'holiday' },
+    { month: 6, tithi: 15, rule: 'nishita', name: 'লক্ষ্মীপূজা', kind: 'holiday' },
+    { month: 6, tithi: 30, rule: 'nishita', name: 'কালীপূজা', kind: 'holiday' },
+    { month: 7, tithi: 2, rule: 'udaya', name: 'ভাইফোঁটা', kind: 'holiday' },
+    { month: 7, tithi: 6, rule: 'udaya-delhi', name: 'ছট পূজা', kind: 'holiday' },
+    { month: 7, tithi: 9, rule: 'udaya', name: 'জগদ্ধাত্রী পূজা', kind: 'observance' },
+    { month: 7, tithi: 15, rule: 'udaya', name: 'গুরু নানক জয়ন্তী', kind: 'holiday' },
+  ];
+  const FIXED = [
+    [1, 1, 'ইংরেজি নববর্ষ', 'observance'],
+    [1, 23, 'নেতাজি জয়ন্তী', 'holiday'],
+    [1, 26, 'প্রজাতন্ত্র দিবস', 'holiday'],
+    [4, 14, 'আম্বেদকর জয়ন্তী', 'holiday'],
+    [5, 1, 'মে দিবস', 'holiday'],
+    [8, 15, 'স্বাধীনতা দিবস', 'holiday'],
+    [10, 2, 'গান্ধী জয়ন্তী', 'holiday'],
+    [12, 25, 'বড়দিন', 'holiday'],
+  ];
+
+  function holidaysOfYear(y) {
+    return cached(`hol:${y}`, () => {
+      const list = [];
+      const add = (n, name, kind) => { if (ymd(n).y === y) list.push({ n, name, kind }); };
+      for (const [m, d, name, kind] of FIXED) add(dn(y, m, d), name, kind);
+      add(easter(y) - 2, 'গুড ফ্রাইডে', 'holiday');
+
+      // Bengali solar calendar days (sankranti = last day of a month)
+      for (const yy of [y - 1, y, y + 1]) {
+        for (const s of sankrantisOfYear(yy)) {
+          const lastOfPrev = s.monthStart - 1;
+          if (s.sign === 0) {
+            add(s.monthStart, 'পয়লা বৈশাখ', 'holiday');
+            add(s.monthStart + 24, 'রবীন্দ্র জয়ন্তী', 'holiday');
+            add(lastOfPrev, 'চৈত্র সংক্রান্তি', 'observance');
+          }
+          if (s.sign === 1) add(s.monthStart + 10, 'নজরুল জয়ন্তী', 'observance');
+          if (s.sign === 9) add(lastOfPrev, 'পৌষ সংক্রান্তি', 'observance');
+          if (s.sign === 5) add(lastOfPrev, 'বিশ্বকর্মা পূজা', 'holiday');
+        }
+      }
+
+      // Lunisolar festivals
+      for (const yy of [y - 1, y, y + 1]) {
+        for (const month of lunarMonthsOfYear(yy)) {
+          if (month.adhika) continue;
+          for (const f of LUNAR_FESTIVALS) {
+            if (f.month !== month.index) continue;
+            const n = observeDay(tithiInterval(month, f.tithi), f.rule);
+            add(n, f.name, f.kind);
+            if (f.name === 'কালীপূজা') add(n - 1, 'ভূত চতুর্দশী', 'observance');
+            if (f.name === 'মহাসপ্তমী') add(n - 1, 'দুর্গাষষ্ঠী', 'holiday');
+          }
+        }
+      }
+
+      // Islamic (India)
+      const k0 = Math.floor((Date.UTC(y - 1, 10, 1) - LUNATION0) / (SYNODIC * DAY));
+      for (let k = k0; k < k0 + 16; k++) {
+        const { month } = hijriOf(k);
+        const start = islamicMonthStart(k);
+        if (month === 10) add(start, 'ঈদ-উল-ফিতর', 'holiday');
+        if (month === 12) add(start + 9, 'ঈদ-উজ-জোহা', 'holiday');
+        if (month === 1) add(start + 9, 'মহরম', 'holiday');
+        if (month === 3) add(start + 11, 'ফতেহা-দোয়াজ-দহম', 'holiday');
+      }
+
+      // de-duplicate (same day & name can be produced from adjacent years)
+      const seen = new Set();
+      return list.filter((h) => { const key = h.n + h.name; if (seen.has(key)) return false; seen.add(key); return true; })
+        .sort((a, b) => a.n - b.n);
+    });
+  }
+  function eventsOn(n) {
+    const out = holidaysOfYear(ymd(n).y).filter((h) => h.n === n);
+    return out.sort((a, b) => (a.kind === b.kind ? 0 : a.kind === 'holiday' ? -1 : 1));
+  }
+  const isHoliday = (n) => eventsOn(n).some((h) => h.kind === 'holiday');
+
+  // ---- moon phase for a civil day (for the little moon icons) ----
+  function moonOfDay(n) {
+    return cached(`moon:${n}`, () => {
+      const angle = elongation(istTime(n, 12));
+      let quarter = null;
+      const q = A.SearchMoonQuarter(istTime(n, 0));
+      if (q && istDay(q.time.date) === n) quarter = q.quarter;
+      return { angle, quarter };
+    });
+  }
+
+  global.Cal = {
+    dn, ymd, istDay, istTime, mondayOf, daysInMonth, dayOfYear, isoWeek, ordinal, isLeap,
+    sunrise, sunset, ayanamsa, siderealSun, sankrantisOfYear, bengaliDate, bangabda, BN_MONTHS,
+    tithiOfDay, tithiLabel, lunarMonthsOfYear, tithiInterval, observeDay, LUNAR_BN,
+    islamicMonthStart, hijriOf, easter, holidaysOfYear, eventsOn, isHoliday, moonOfDay,
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script>
+/* Public-domain Bengali quotes for the "today's words" strip (Hobonichi's own
+   quotes are copyrighted, so these stand in for them). */
+(function (global) {
+  'use strict';
+  const RT = 'রবীন্দ্রনাথ ঠাকুর';
+  const QUOTES = [
+    { t: ['যদি তোর ডাক শুনে কেউ না আসে', 'তবে একলা চলো রে।'], a: RT },
+    { t: ['চিত্ত যেথা ভয়শূন্য, উচ্চ যেথা শির,', 'জ্ঞান যেথা মুক্ত,'], a: RT, s: 'নৈবেদ্য' },
+    { t: ['আকাশভরা সূর্য-তারা, বিশ্বভরা প্রাণ,', 'তাহারি মাঝখানে আমি পেয়েছি মোর স্থান,', 'বিস্ময়ে তাই জাগে আমার গান।'], a: RT },
+    { t: ['বিপদে মোরে রক্ষা করো', 'এ নহে মোর প্রার্থনা—', 'বিপদে আমি না যেন করি ভয়।'], a: RT, s: 'গীতাঞ্জলি' },
+    { t: ['মরিতে চাহি না আমি সুন্দর ভুবনে,', 'মানবের মাঝে আমি বাঁচিবারে চাই।'], a: RT, s: 'কড়ি ও কোমল' },
+    { t: ['সহজ কথা লিখতে আমায় কহ যে,', 'সহজ কথা যায় না লেখা সহজে।'], a: RT },
+    { t: ['আলো আমার, আলো ওগো,', 'আলো ভুবন-ভরা।'], a: RT },
+    { t: ['এসো হে বৈশাখ, এসো এসো।', 'তাপসনিশ্বাসবায়ে মুমূর্ষুরে দাও উড়ায়ে,', 'বৎসরের আবর্জনা দূর হয়ে যাক।'], a: RT, only: 'boishakh' },
+    { t: ['পুরানো সেই দিনের কথা', 'ভুলবি কি রে হায়।'], a: RT },
+    { t: ['আমরা সবাই রাজা আমাদের এই', 'রাজার রাজত্বে—'], a: RT },
+    { t: ['মেঘের কোলে রোদ হেসেছে,', 'বাদল গেছে টুটি।', 'আজ আমাদের ছুটি ও ভাই,', 'আজ আমাদের ছুটি।'], a: RT, only: 'pujo' },
+    { t: ['আজি এ প্রভাতে রবির কর', 'কেমনে পশিল প্রাণের ’পর,'], a: RT, s: 'নির্ঝরের স্বপ্নভঙ্গ' },
+    { t: ['আমার মাথা নত করে দাও হে তোমার', 'চরণধুলার তলে।'], a: RT, s: 'গীতাঞ্জলি' },
+    { t: ['জীবন যখন শুকায়ে যায়', 'করুণাধারায় এসো।'], a: RT, s: 'গীতাঞ্জলি' },
+    { t: ['আগুনের পরশমণি ছোঁয়াও প্রাণে,', 'এ জীবন পুণ্য করো দহন-দানে।'], a: RT },
+    { t: ['আমরা চলি সমুখপানে,', 'কে আমাদের বাঁধবে?'], a: RT },
+    { t: ['ওরে গৃহবাসী, খোল্ দ্বার খোল্,', 'লাগল যে দোল।'], a: RT, only: 'dol' },
+    { t: ['আমার সোনার বাংলা,', 'আমি তোমায় ভালোবাসি।'], a: RT },
+    { t: ['আজি হতে শতবর্ষ পরে', 'কে তুমি পড়িছ বসি আমার কবিতাখানি', 'কৌতূহলভরে—'], a: RT, s: 'চিত্রা' },
+    { t: ['বাংলার মাটি, বাংলার জল,', 'বাংলার বায়ু, বাংলার ফল—', 'পুণ্য হউক, পুণ্য হউক, পুণ্য হউক হে ভগবান।'], a: RT },
+    { t: ['যেতে নাহি দিব। হায়,', 'তবু যেতে দিতে হয়,', 'তবু চলে যায়।'], a: RT, s: 'সোনার তরী' },
+    { t: ['গ্রাম ছাড়া ওই রাঙা মাটির পথ', 'আমার মন ভুলায় রে।'], a: RT },
+    { t: ['রাতের সব তারাই আছে', 'দিনের আলোর গভীরে।'], a: RT },
+    { t: ['আমার এই পথ-চাওয়াতেই আনন্দ।'], a: RT },
+    { t: ['মেঘের পরে মেঘ জমেছে,', 'আঁধার করে আসে।'], a: RT },
+    { t: ['তোমার হল শুরু, আমার হল সারা—', 'তোমায় আমায় মিলে এমনি বহে ধারা।'], a: RT },
+    { t: ['ভালোবাসি ভালোবাসি—', 'এই সুরে কাছে দূরে জলে স্থলে বাজায় বাঁশি।'], a: RT },
+    { t: ['দাও ফিরে সে অরণ্য, লও এ নগর,'], a: RT, s: 'চৈতালি' },
+    { t: ['ধনধান্য পুষ্প ভরা আমাদের এই বসুন্ধরা,', 'তাহার মাঝে আছে দেশ এক—', 'সকল দেশের সেরা;'], a: 'দ্বিজেন্দ্রলাল রায়' },
+    { t: ['মোদের গরব, মোদের আশা,', 'আ মরি বাংলা ভাষা!'], a: 'অতুলপ্রসাদ সেন' },
+    { t: ['আয় রে ভোলা খেয়াল-খোলা', 'স্বপনদোলা নাচিয়ে আয়,'], a: 'সুকুমার রায়', s: 'আবোল তাবোল' },
+    { t: ['হাঁস ছিল, সজারু, (ব্যাকরণ মানি না),', 'হয়ে গেল ‘হাঁসজারু’ কেমনে তা জানি না।'], a: 'সুকুমার রায়', s: 'খিচুড়ি' },
+    { t: ['শিবঠাকুরের আপন দেশে,', 'আইন কানুন সর্বনেশে!'], a: 'সুকুমার রায়', s: 'একুশে আইন' },
+    { t: ['খাঁচার ভিতর অচিন পাখি', 'কেমনে আসে যায়।'], a: 'লালন ফকির' },
+    { t: ['শুনহ মানুষ ভাই,', 'সবার উপরে মানুষ সত্য,', 'তাহার উপরে নাই।'], a: 'চণ্ডীদাস' },
+    { t: ['বহুরূপে সম্মুখে তোমার, ছাড়ি কোথা খুঁজিছ ঈশ্বর?', 'জীবে প্রেম করে যেই জন,', 'সেই জন সেবিছে ঈশ্বর।'], a: 'স্বামী বিবেকানন্দ' },
+    { t: ['মন রে, কৃষিকাজ জান না।', 'এমন মানব-জমিন রইল পতিত,', 'আবাদ করলে ফলত সোনা।'], a: 'রামপ্রসাদ সেন' },
+    { t: ['দাঁড়াও পথিক-বর, জন্ম যদি তব', 'বঙ্গে! তিষ্ঠ ক্ষণকাল!'], a: 'মাইকেল মধুসূদন দত্ত' },
+  ];
+  // A few days get a fitting quote; seasonal ones never appear in the rotation.
+  const BY_EVENT = {
+    'পয়লা বৈশাখ': 'boishakh', 'দোলযাত্রা': 'dol',
+    'মহাসপ্তমী': 'pujo', 'মহাষ্টমী': 'pujo', 'মহানবমী': 'pujo', 'বিজয়া দশমী': 'pujo',
+    'রবীন্দ্র জয়ন্তী': 2, 'স্বাধীনতা দিবস': 1, 'প্রজাতন্ত্র দিবস': 28,
+  };
+  const ROTATION = QUOTES.filter((q) => !q.only);
+  function quoteFor(n, events = []) {
+    for (const e of events) {
+      const key = BY_EVENT[e.name];
+      if (key == null) continue;
+      return typeof key === 'number' ? QUOTES[key] : QUOTES.find((q) => q.only === key);
+    }
+    const h = Math.imul(n ^ 0x5bd1e995, 2654435761) >>> 0;
+    return ROTATION[h % ROTATION.length];
+  }
+  global.Quotes = { QUOTES, quoteFor };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script>
+/* ==========================================================================
+   PDF renderer: three Hobonichi-style spreads on A4 landscape (pdf-lib).
+   Every template is drawn in its own millimetre space (origin top-left, y down)
+   and scaled onto one half of the A4 sheet.
+   ========================================================================== */
+(function (global) {
+  'use strict';
+  const L = global.PDFLib;
+  const Cal = global.Cal;
+  if (!L || !Cal) return;
+  const Quotes = global.Quotes;
+  const MM = 72 / 25.4;
+  const SHEET_W = 297, SHEET_H = 210, HALF = SHEET_W / 2;
+
+  const hex = (h) => L.rgb(parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255);
+  const isBn = (cp) => (cp >= 0x0980 && cp <= 0x09ff) || cp === 0x200c || cp === 0x200d;
+  const BN_DIGITS = '০১২৩৪৫৬৭৮৯';
+  const bnNum = (v) => String(v).replace(/[0-9]/g, (d) => BN_DIGITS[d]);
+
+  const WD_BN = ['রবি', 'সোম', 'মঙ্গল', 'বুধ', 'বৃহঃ', 'শুক্র', 'শনি'];
+  const WD_BN_1 = ['র', 'সো', 'ম', 'বু', 'বৃ', 'শু', 'শ'];
+  const WD_EN = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  const MONTH_EN = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+  const MON_EN = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+
+  // ---- shaped text ---------------------------------------------------------
+  // pdf-lib applies a font's substitutions (conjuncts, reph, vowel reordering)
+  // but drops its mark positioning. Text whose marks need offsets is drawn glyph
+  // by glyph at the positions fontkit computes.
+  const shapeCache = new WeakMap(); // PDFFont -> Map(text -> shaped run)
+  function shaped(pdfFont, text) {
+    let runs = shapeCache.get(pdfFont);
+    if (!runs) { runs = new Map(); shapeCache.set(pdfFont, runs); }
+    let run = runs.get(text);
+    if (!run) {
+      const emb = pdfFont.embedder, r = emb.font.layout(text, emb.fontFeatures), upm = emb.font.unitsPerEm;
+      const plain = r.positions.every((p, i) => !p.xOffset && !p.yOffset && p.xAdvance === r.glyphs[i].advanceWidth);
+      run = { glyphs: r.glyphs, positions: r.positions, upm, plain, advance: r.positions.reduce((w, p) => w + p.xAdvance, 0) / upm };
+      runs.set(text, run);
+    }
+    return run;
+  }
+  function glyphCode(pdfFont, glyph) {
+    const emb = pdfFont.embedder;
+    if (!emb.subset) return glyph.id;
+    const id = emb.subset.includeGlyph(glyph); // same bookkeeping as pdf-lib's encodeText
+    emb.glyphs[id - 1] = glyph;
+    emb.glyphIdMap.set(glyph.id, id);
+    emb.glyphCache.invalidate();
+    return id;
+  }
+  function drawShaped(page, pdfFont, text, x, y, size, color, opacity) {
+    const run = shaped(pdfFont, text);
+    if (run.plain || opacity != null) {
+      const o = { x, y, size, font: pdfFont, color };
+      if (opacity != null) o.opacity = opacity;
+      page.drawText(text, o);
+      return;
+    }
+    page.setFont(pdfFont);
+    const [, fontKey] = page.getFont();
+    const k = size / run.upm;
+    const ops = [L.pushGraphicsState(), L.setFillingColor(color), L.beginText(), L.setFontAndSize(fontKey, size)];
+    let pen = 0;
+    run.glyphs.forEach((g, i) => {
+      const p = run.positions[i];
+      ops.push(L.setTextMatrix(1, 0, 0, 1, x + (pen + p.xOffset) * k, y + p.yOffset * k));
+      ops.push(L.showText(L.PDFHexString.of(glyphCode(pdfFont, g).toString(16).padStart(4, '0'))));
+      pen += p.xAdvance;
+    });
+    ops.push(L.endText(), L.popGraphicsState());
+    page.pushOperators(...ops);
+  }
+
+  // ---- drawing layer -------------------------------------------------------
+  class Pen {
+    constructor(page, fonts, { ox = 0, oy = 0, s = 1 } = {}) {
+      Object.assign(this, { page, fonts, ox, oy, s });
+      this.H = page.getHeight();
+    }
+    X(x) { return (this.ox + x * this.s) * MM; }
+    Y(y) { return this.H - (this.oy + y * this.s) * MM; }
+
+    line(x1, y1, x2, y2, { color = '#000000', w = 0.5, dot = 0, opacity } = {}) {
+      const o = { start: { x: this.X(x1), y: this.Y(y1) }, end: { x: this.X(x2), y: this.Y(y2) }, thickness: w * this.s, color: hex(color) };
+      if (opacity != null) o.opacity = opacity;
+      if (dot) { o.dashArray = [0, dot * this.s * MM]; o.lineCap = L.LineCapStyle.Round; }
+      this.page.drawLine(o);
+    }
+    rect(x, y, w, h, { fill, stroke, lw = 0.5, opacity } = {}) {
+      const o = { x: this.X(x), y: this.Y(y + h), width: w * this.s * MM, height: h * this.s * MM, borderWidth: 0 };
+      if (fill) o.color = hex(fill);
+      if (stroke) { o.borderColor = hex(stroke); o.borderWidth = lw * this.s; }
+      if (opacity != null) { o.opacity = opacity; o.borderOpacity = opacity; }
+      this.page.drawRectangle(o);
+    }
+    path(d, { fill, stroke, lw = 0.5 } = {}) {
+      const o = { x: this.X(0), y: this.Y(0), scale: this.s * MM };
+      if (fill) o.color = hex(fill);
+      if (stroke) { o.borderColor = hex(stroke); o.borderWidth = lw / MM; }
+      this.page.drawSvgPath(d, o);
+    }
+    circle(cx, cy, r, style) {
+      this.path(`M${cx - r} ${cy} A${r} ${r} 0 1 0 ${cx + r} ${cy} A${r} ${r} 0 1 0 ${cx - r} ${cy} Z`, style);
+    }
+    pill(x, y, w, h, style) {
+      const r = Math.min(h, w) / 2;
+      this.path(`M${x + r} ${y} H${x + w - r} A${r} ${r} 0 0 1 ${x + w - r} ${y + h} H${x + r} A${r} ${r} 0 0 1 ${x + r} ${y} Z`, style);
+    }
+
+    // Split text into runs: Bengali goes to the Bengali font, digits to the
+    // numerals font, letters to the Latin font. Punctuation and spaces stay with
+    // the run before them when that font has the glyph.
+    runs(str, font) {
+      const bnKey = font === 'latin' ? 'bengali' : font;
+      const has = (key, cp) => this.fonts.cover[key].has(cp);
+      const out = [];
+      let cur = null;
+      for (const ch of str) {
+        const cp = ch.codePointAt(0);
+        let key;
+        if (isBn(cp)) key = bnKey;
+        else if (cp >= 0x30 && cp <= 0x39) key = 'numerals';
+        else if (/[A-Za-z]/.test(ch)) key = 'latin';
+        else if (cur && has(cur.key, cp)) key = cur.key;
+        else if (!cur && font !== 'latin' && has(bnKey, cp)) key = bnKey;
+        else if (has('latin', cp)) key = 'latin';
+        else if (has(bnKey, cp)) key = bnKey;
+        else continue; // no font has this glyph
+        if (cur && cur.key === key) cur.text += ch;
+        else { cur = { key, text: ch }; out.push(cur); }
+      }
+      return out;
+    }
+    // Sizes are given for the reference fonts; other fonts are scaled so their
+    // digits / Bengali headline come out the same height.
+    size(key, sz) { return sz * this.fonts.scale[key]; }
+    measure(str, size, font = 'latin') {
+      return this.runs(String(str), font).reduce((w, r) => w + shaped(this.fonts[r.key], r.text).advance * this.size(r.key, size) / MM, 0);
+    }
+    // size in (local) pt; x, y in local mm. Returns the drawn width.
+    text(str, x, y, { size = 8, font = 'latin', color = '#000000', align = 'left', valign = 'baseline', maxW = null, knockout = null, opacity } = {}) {
+      if (str == null || str === '') return 0;
+      str = String(str);
+      let sz = size;
+      let w = this.measure(str, sz, font);
+      if (maxW && w > maxW) { sz *= maxW / w; w = maxW; }
+      let x0 = align === 'center' ? x - w / 2 : align === 'right' ? x - w : x;
+      const em = sz / MM;
+      const mid = font === 'latin' ? 0.345 : 0.3;
+      const yb = valign === 'middle' ? y + em * mid : valign === 'top' ? y + em * mid * 2 : y;
+      if (knockout) this.rect(x0 - 0.35, yb - em * 0.78, w + 0.7, em * 0.95, { fill: knockout });
+      for (const r of this.runs(str, font)) {
+        const f = this.fonts[r.key], rs = this.size(r.key, sz);
+        drawShaped(this.page, f, r.text, this.X(x0), this.Y(yb), rs * this.s, hex(color), opacity);
+        x0 += shaped(f, r.text).advance * rs / MM;
+      }
+      return w;
+    }
+  }
+
+  // "—— author ‘work’" with the double dash drawn as one rule, like the originals.
+  function attribution(pen, q, x, y, { size, color, maxW = null }) {
+    if (!q) return;
+    const em = size / MM, dash = em * 1.9;
+    pen.line(x, y - em * 0.3, x + dash, y - em * 0.3, { color, w: size * 0.07 });
+    pen.text(`${q.a}${q.s ? ` ‘${q.s}’` : ''}`, x + dash + em * 0.45, y, { size, font: 'bengali', color, maxW: maxW && maxW - dash - em * 0.45 });
+  }
+
+  // ---- shared pieces -------------------------------------------------------
+  function moonLitPath(cx, cy, r, angle) {
+    const waxing = angle < 180;
+    const th = waxing ? angle : 360 - angle;
+    const rx = Math.max(Math.abs(Math.cos((th * Math.PI) / 180)) * r, 0.0005);
+    const crescent = th < 90;
+    const limb = waxing ? 1 : 0;
+    const term = waxing ? (crescent ? 0 : 1) : (crescent ? 1 : 0);
+    return `M${cx} ${cy - r} A${r} ${r} 0 0 ${limb} ${cx} ${cy + r} A${rx} ${r} 0 0 ${term} ${cx} ${cy - r} Z`;
+  }
+  function drawMoon(pen, cx, cy, r, moon, { ink, paper, lw = 0.35 }) {
+    const { angle, quarter } = moon;
+    if (quarter === 0 || angle < 6 || angle > 354) { pen.circle(cx, cy, r, { fill: ink }); return; }
+    if (quarter === 2) {
+      pen.circle(cx, cy, r, { fill: paper, stroke: ink, lw });
+      for (let k = 0; k < 4; k++) {
+        const a = Math.PI / 4 + (k * Math.PI) / 2, sx = cx + Math.cos(a) * r * 1.6, sy = cy + Math.sin(a) * r * 1.6, R = r * 0.36, q = R * 0.28;
+        pen.path(`M${sx} ${sy - R} L${sx + q} ${sy - q} L${sx + R} ${sy} L${sx + q} ${sy + q} L${sx} ${sy + R} L${sx - q} ${sy + q} L${sx - R} ${sy} L${sx - q} ${sy - q} Z`, { fill: ink });
+      }
+      return;
+    }
+    pen.circle(cx, cy, r, { fill: ink });
+    pen.path(moonLitPath(cx, cy, r, angle), { fill: paper });
+    pen.circle(cx, cy, r, { stroke: ink, lw });
+  }
+
+  // Monday-first month calendar. x/y: centre of the first column / header row.
+  function miniCal(pen, o) {
+    const { x, y, colW, rowH, size, year, month, circle = [], colors: c, pillH = rowH * 0.86, pillLW = 0.45, headSize = size } = o;
+    const order = [1, 2, 3, 4, 5, 6, 0];
+    order.forEach((wd, i) => {
+      pen.text(WD_BN_1[wd], x + i * colW, y, { size: headSize, font: 'bengali', color: wd === 0 ? c.sun : wd === 6 ? c.sat : c.head, align: 'center', valign: 'middle' });
+    });
+    const first = Cal.dn(year, month, 1);
+    const offset = (Cal.ymd(first).wd + 6) % 7;
+    const len = Cal.daysInMonth(year, month);
+    const pos = (d) => { const k = offset + d - 1; return { col: k % 7, row: Math.floor(k / 7) }; };
+    const rows = new Map();
+    for (const n of circle) {
+      const t = Cal.ymd(n);
+      if (t.y !== year || t.m !== month) continue;
+      const p = pos(t.d);
+      const r = rows.get(p.row) || { a: p.col, b: p.col };
+      r.a = Math.min(r.a, p.col); r.b = Math.max(r.b, p.col);
+      rows.set(p.row, r);
+    }
+    for (const [row, r] of rows) {
+      const cy = y + (row + 1) * rowH;
+      pen.pill(x + r.a * colW - colW * 0.47, cy - pillH / 2, (r.b - r.a) * colW + colW * 0.94, pillH, { stroke: c.pill, lw: pillLW });
+    }
+    for (let d = 1; d <= len; d++) {
+      const n = Cal.dn(year, month, d), p = pos(d), wd = Cal.ymd(n).wd;
+      const color = Cal.isHoliday(n) ? c.holiday : wd === 0 ? c.sun : wd === 6 ? c.sat : c.text;
+      pen.text(String(d), x + p.col * colW, y + (p.row + 1) * rowH, { size, font: 'latin', color, align: 'center', valign: 'middle' });
+    }
+  }
+
+  const eventsLabel = (events) => events.map((e) => e.name).join(' · ');
+  const weekMonth = (monday) => Cal.ymd(monday + 3); // the month a week belongs to (ISO rule)
+  function bengaliMonthsOf(year, month) {
+    const a = Cal.bengaliDate(Cal.dn(year, month, 1)).month;
+    const b = Cal.bengaliDate(Cal.dn(year, month, Cal.daysInMonth(year, month))).month;
+    return a === b ? Cal.BN_MONTHS[a] : `${Cal.BN_MONTHS[a]}–${Cal.BN_MONTHS[b]}`;
+  }
+  function bangabdaOfWeek(monday) {
+    const a = Cal.bangabda(monday), b = Cal.bangabda(monday + 6);
+    return a === b ? `${bnNum(a)} বঙ্গাব্দ` : `${bnNum(a)}–${bnNum(b)} বঙ্গাব্দ`;
+  }
+  const dayKind = (n) => {
+    const wd = Cal.ymd(n).wd;
+    if (Cal.isHoliday(n) || wd === 0) return 'red';
+    return wd === 6 ? 'sat' : 'plain';
+  };
+
+  function grid(pen, x, y, cols, rows, cell, style) {
+    for (let i = 0; i <= cols; i++) pen.line(x + i * cell, y, x + i * cell, y + rows * cell, style);
+    for (let j = 0; j <= rows; j++) pen.line(x, y + j * cell, x + cols * cell, y + j * cell, style);
+  }
+
+  // ---- 1. A6 daily (Hobonichi Techo), scaled ×√2 onto each A5 half ----------
+  const DAILY = {
+    W: 105, H: 148, c: 3.7, cols: 26, rows: 32, gx: 4.4, gy: 4.0,
+    colors: { ink: '#45462C', text: '#53543D', accent: '#7E7C55', red: '#B4583E', line: '#9C9A7C', grid: '#A7A79A', light: '#A2A189', calRed: '#C0735E', paper: '#FFFFFF', tint: '#FBFAF4' },
+  };
+
+  function drawDaily(pen, n, side, ctx) {
+    const D = DAILY, c = D.c, C = D.colors;
+    const { gx, gy } = D, gw = D.cols * c, gh = D.rows * c;
+    const paper = ctx.tint ? C.tint : C.paper;
+    const dot = { color: C.grid, w: 0.36, dot: c / 9 };
+    if (ctx.tint) pen.rect(0, 0, D.W, D.H, { fill: paper });
+    grid(pen, gx, gy, D.cols, D.rows, c, dot);
+    const { y, m, d, wd } = Cal.ymd(n);
+
+    if (side === 'right') {
+      // month index tab on the outer edge
+      const ty = gy + (5 + (m - 1) * 2) * c, tx = gx + gw - 0.55 * c;
+      pen.rect(tx, ty, D.W - tx + 3, 2 * c, { fill: C.accent });
+      pen.text(String(m), (tx + D.W - 0.8) / 2, ty + c, { size: 8, font: 'latin', color: '#FFFFFF', align: 'center', valign: 'middle' });
+      miniCal(pen, {
+        x: gx + gw - 2.0 - 6 * 3.0, y: gy + gh + 4.85, colW: 3.0, rowH: 2.97, size: 4.5, headSize: 4.6, year: y, month: m,
+        circle: ctx.circle || [n], pillH: 2.5, pillLW: 0.4,
+        colors: { text: C.ink, head: C.ink, sat: C.ink, sun: C.calRed, holiday: C.calRed, pill: C.ink },
+      });
+    }
+    if (ctx.notes) return;
+
+    const events = Cal.eventsOn(n);
+    const kind = dayKind(n);
+    // header box
+    const hx = gx, hy = gy, hw = 10 * c, hh = 4 * c;
+    pen.rect(hx, hy, hw, hh, { fill: paper });
+    for (const k of [2, 6, 8]) pen.line(hx + k * c, hy, hx + k * c, hy + 3 * c, { ...dot, color: C.line });
+    pen.line(hx, hy + 3 * c, hx + hw, hy + 3 * c, { ...dot, color: C.line });
+    const fill = kind === 'sat' ? C.accent : kind === 'red' ? C.red : null;
+    if (fill) pen.rect(hx + 6 * c, hy, 2 * c, 3 * c, { fill });
+    pen.rect(hx, hy, hw, hh, { stroke: C.line, lw: 0.5 });
+
+    pen.text(String(m), hx + c, hy + 1.5 * c, { size: 13.4, color: C.ink, align: 'center', valign: 'middle' });
+    pen.text(String(d), hx + 4 * c, hy + 1.5 * c, { size: 25, color: C.ink, align: 'center', valign: 'middle' });
+    pen.text(WD_BN[wd], hx + 7 * c, hy + 1.5 * c, { size: 9.5, font: 'strong', color: fill ? '#FFFFFF' : C.ink, align: 'center', valign: 'middle', maxW: 2 * c - 1.2 });
+    drawMoon(pen, hx + 9 * c, hy + 1.0 * c, 1.3, Cal.moonOfDay(n), { ink: C.ink, paper, lw: 0.3 });
+    pen.text(String(Cal.dayOfYear(n)), hx + 9 * c, hy + 2.42 * c, { size: 5.2, color: C.text, align: 'center', valign: 'middle' });
+    const b = Cal.bengaliDate(n);
+    pen.text(`${bnNum(b.day)} ${Cal.BN_MONTHS[b.month]} ${bnNum(b.year)}`, hx + 0.35 * c, hy + 3.5 * c, { size: 6.3, font: 'bengali', color: C.text, valign: 'middle' });
+    pen.text(Cal.tithiLabel(Cal.tithiOfDay(n).tithi), hx + hw - 0.35 * c, hy + 3.5 * c, { size: 6.3, font: 'bengali', color: C.text, align: 'right', valign: 'middle' });
+
+    // to-do checkboxes
+    for (let r = 0; r < 5; r++) pen.rect(gx + 11.12 * c, gy + (r + 0.12) * c, 0.76 * c, 0.76 * c, { fill: paper, stroke: C.line, lw: 0.45 });
+
+    // holidays & observances, top right
+    events.slice(0, 3).forEach((e, i) => {
+      pen.text(e.name, gx + gw - 0.3 * c, gy + (i + 0.5) * c, { size: 6.4, font: 'strong', color: e.kind === 'holiday' ? C.red : C.text, align: 'right', valign: 'middle', knockout: paper, maxW: 13 * c });
+    });
+
+    // time axis 4:00 → 4:00
+    const t0 = gy + 5 * c, t1 = gy + 29 * c;
+    pen.line(gx + 2 * c, t0, gx + 2 * c, t1, { color: C.line, w: 0.5 });
+    pen.line(gx + 11 * c, t0, gx + 11 * c, t1, { color: C.line, w: 0.5 });
+    for (let i = 0; i <= 24; i++) {
+      const hour = (4 + i) % 24, yy = t0 + i * c;
+      if (hour % 3 === 0) pen.text(String(hour), gx + c, yy, { size: 7, color: C.ink, align: 'center', valign: 'middle', knockout: paper });
+      else pen.circle(gx + c, yy, 0.27, { fill: C.ink });
+      if (i < 24) pen.line(gx + c - 0.32, yy + c / 2, gx + c + 0.32, yy + c / 2, { color: C.light, w: 0.4 });
+    }
+
+    // today's words
+    const q = Quotes.quoteFor(n, events);
+    const qx = gx + 2 * c, qy = gy + gh + 5.9, lh = 3.75;
+    const maxW = side === 'right' ? 15.2 * c : gw - 2.6 * c;
+    q.t.forEach((t, i) => pen.text(t, qx, qy + i * lh, { size: 7.3, font: 'bengali', color: C.text, maxW }));
+    attribution(pen, q, qx, qy + q.t.length * lh, { size: 7.3, color: C.text, maxW });
+  }
+
+  // ---- 2. A5 weekly (Hobonichi Cousin), actual size ------------------------
+  const A5 = {
+    c: 3.7, gx: 7.65, top: 6.2,
+    colors: { ink: '#4B4C50', navy: '#535A6C', red: '#C53F30', hour: '#8F8F8F', tick: '#7D7D7D', col: '#9A9A9A', box: '#8C8C8C', grid: '#BDBDBD', sat: '#A4A4A4', holiday: '#D9776B', light: '#8A8A8A', paper: '#FFFFFF', tint: '#FCFBF8' },
+  };
+  const a5GridTop = () => A5.top + 5 * A5.c;
+  const a5GridBottom = () => a5GridTop() + 48 * A5.c;
+
+  function a5DayColumn(pen, x, n, last, ctx) {
+    const c = A5.c, C = A5.colors, top = A5.top, gt = a5GridTop(), gb = a5GridBottom();
+    const paper = ctx.tint ? C.tint : C.paper;
+    const dot = { color: C.grid, w: 0.4, dot: c / 7 };
+    // grid with hour labels (5 → 4)
+    for (let i = 0; i <= 48; i++) {
+      const yy = gt + i * c, hourLine = i % 2 === 0 && i < 48;
+      pen.line(hourLine ? x + 1.15 * c : x, yy, x + 9 * c, yy, dot);
+      if (hourLine) {
+        pen.text(String((5 + i / 2) % 24), x + 0.62 * c, yy, { size: 5.4, color: C.hour, align: 'right', valign: 'middle' });
+        pen.line(x + 0.8 * c, yy, x + 1.08 * c, yy, { color: C.tick, w: 0.75 });
+      }
+    }
+    for (let k = 1; k <= (last ? 9 : 8); k++) pen.line(x + k * c, gt, x + k * c, gb, dot);
+    pen.line(x, top, x, gb, { color: C.col, w: 0.7 });
+
+    // date box
+    const { d, wd } = Cal.ymd(n), kind = dayKind(n);
+    const fill = kind === 'sat' ? C.navy : kind === 'red' ? C.red : null;
+    pen.rect(x, top, 7 * c, 2 * c, { fill: paper });
+    if (fill) pen.rect(x + 4 * c, top, 3 * c, 2 * c, { fill });
+    pen.line(x + 4 * c, top, x + 4 * c, top + 2 * c, { color: C.box, w: 0.6 });
+    pen.rect(x, top, 7 * c, 2 * c, { stroke: C.box, lw: 0.6 });
+    pen.text(String(d), x + 2 * c, top + c, { size: 16, color: C.ink, align: 'center', valign: 'middle' });
+    const fc = fill ? '#FFFFFF' : C.ink;
+    const w1 = pen.measure(WD_BN[wd], 7.6, 'strong'), w2 = pen.measure(WD_EN[wd], 4.6), gap = 0.9;
+    const sx = x + 5.5 * c - (w1 + gap + w2) / 2;
+    pen.text(WD_BN[wd], sx, top + c, { size: 7.6, font: 'strong', color: fc, valign: 'middle' });
+    pen.text(WD_EN[wd], sx + w1 + gap, top + c, { size: 4.6, color: fc, valign: 'middle' });
+
+    // holidays under the box, Bengali date + tithi just above the grid
+    Cal.eventsOn(n).slice(0, 3).forEach((e, i) => {
+      pen.text(e.name, x + 0.3 * c, top + 2 * c + 3.1 + i * 2.9, { size: 6.2, font: 'strong', color: e.kind === 'holiday' ? C.red : C.light, maxW: 8.5 * c });
+    });
+    const b = Cal.bengaliDate(n);
+    pen.text(`${bnNum(b.day)} ${Cal.BN_MONTHS[b.month]} · ${Cal.tithiLabel(Cal.tithiOfDay(n).tithi)}`, x + 0.3 * c, gt - 2.5, { size: 5.4, font: 'bengali', color: C.light, maxW: 8.5 * c });
+  }
+
+  function drawA5Left(pen, monday, ctx) {
+    const c = A5.c, C = A5.colors, gx = A5.gx, top = A5.top, gt = a5GridTop(), gb = a5GridBottom();
+    if (ctx.tint) pen.rect(0, 0, HALF, SHEET_H, { fill: C.tint });
+    const thu = weekMonth(monday), wk = Cal.isoWeek(monday);
+    // info column
+    const dot = { color: C.grid, w: 0.4, dot: c / 7 };
+    grid(pen, gx, gt + 10 * c, 9, 38, c, dot);
+    // navy band: year / Bangabda / week on the left, the month on the right,
+    // both centred on the band's middle line
+    const bandH = 4 * c, mid = top + bandH / 2, right = gx + 9 * c;
+    pen.rect(-1, top, right + 1, bandH, { fill: C.navy });
+    const cap = (size) => (size / MM) * REF.digit;
+    const gap1 = 3.45, gap2 = 4.3; // baseline to baseline, mm
+    const b1 = mid - (cap(10.5) + gap1 + gap2) / 2 + cap(10.5);
+    const w1 = pen.text(String(thu.y), gx, b1, { size: 10.5, color: '#FFFFFF' });
+    const w2 = pen.text(bangabdaOfWeek(monday), gx, b1 + gap1, { size: 7.4, font: 'strong', color: '#FFFFFF' });
+    const w3 = pen.text(`${Cal.ordinal(wk.week)} week`, gx, b1 + gap1 + gap2, { size: 7, color: '#FFFFFF' });
+    const pad = (bandH - cap(35)) / 2;
+    const room = right - pad - (gx + Math.max(w1, w2, w3) + 2.4);
+    const mw = pen.measure(String(thu.m), 35);
+    const msize = mw > room ? 35 * room / mw : 35;
+    pen.text(String(thu.m), right - pad, mid + cap(msize) / 2, { size: msize, color: '#FFFFFF', align: 'right' });
+    const bm = pen.text(bengaliMonthsOf(thu.y, thu.m), gx, top + 5.3 * c, { size: 8, font: 'bengali', color: C.ink, maxW: 6 * c });
+    pen.text(MONTH_EN[thu.m - 1], gx + bm + 2.6, top + 5.3 * c, { size: 7.4, color: C.ink });
+    miniCal(pen, {
+      x: gx + 1.25, y: top + 7.7 * c, colW: 4.0, rowH: 4.0, size: 6, headSize: 6.2, year: thu.y, month: thu.m,
+      circle: [0, 1, 2, 3, 4, 5, 6].map((k) => monday + k), pillH: 3.5, pillLW: 0.55,
+      colors: { text: '#555557', head: '#555557', sat: C.sat, sun: C.red, holiday: C.holiday, pill: C.red },
+    });
+    for (let k = 0; k < 3; k++) a5DayColumn(pen, gx + (k + 1) * 9 * c, monday + k, k === 2, ctx);
+  }
+  function drawA5Right(pen, monday, ctx) {
+    const c = A5.c;
+    if (ctx.tint) pen.rect(0, 0, HALF, SHEET_H, { fill: A5.colors.tint });
+    for (let k = 0; k < 4; k++) a5DayColumn(pen, A5.gx + k * 9 * c, monday + 3 + k, k === 3, ctx);
+  }
+
+  // ---- 3. Weeks (Hobonichi Weeks) -----------------------------------------
+  const WK = {
+    g: 3.8, top: 13.2, rowCells: 6, lx: 10.2, labelCells: 2.5, writeCells: 32, rx: 7.2, rightCells: 34,
+    colors: { ink: '#4F4741', red: '#C8475E', line: '#9F978B', dots: '#B3AB9B', faint: '#EDEAE3', faintTint: '#E6DFCD', grid: '#AAA38F', tab: '#635C5A', sat: '#9A9486', sun: '#D46F84', light: '#8C847A', paper: '#FFFFFF', tint: '#F5EFDD' },
+  };
+
+  function drawWeeksLeft(pen, monday, ctx) {
+    const g = WK.g, C = WK.colors, x0 = WK.lx, top = WK.top, rh = WK.rowCells * g;
+    const paper = ctx.tint ? C.tint : C.paper;
+    if (ctx.tint) pen.rect(0, 0, HALF, SHEET_H, { fill: paper });
+    const lw = WK.labelCells * g, wx = x0 + lw, ww = WK.writeCells * g, xe = wx + ww;
+    const thu = weekMonth(monday), wk = Cal.isoWeek(monday);
+
+    // header
+    const hy = top - 3.4;
+    let hx = x0 + pen.text(String(thu.m), x0, hy, { size: 15, color: C.ink }) + 3.2;
+    hx += pen.text(`${MONTH_EN[thu.m - 1]} ${thu.y}`, hx, hy, { size: 6.4, color: C.ink }) + 3.2;
+    pen.text(`${bangabdaOfWeek(monday)}  ${bengaliMonthsOf(thu.y, thu.m)}`, hx, hy, { size: 6.8, font: 'bengali', color: C.ink });
+    pen.text(`${Cal.ordinal(wk.week)} WEEK`, xe, hy, { size: 6.4, color: C.ink, align: 'right' });
+
+    // faint writing grid
+    const faint = { color: ctx.tint ? C.faintTint : C.faint, w: 0.25 };
+    for (let i = 0; i <= WK.writeCells; i++) pen.line(wx + i * g, top, wx + i * g, top + 7 * rh, faint);
+    for (let j = 0; j <= 7 * WK.rowCells; j++) if (j % WK.rowCells) pen.line(wx, top + j * g, xe, top + j * g, faint);
+    // label column (dotted) and day separators with thirds marks
+    const dots = { color: C.dots, w: 0.4, dot: g / 7 };
+    pen.line(x0, top, x0, top + 7 * rh, dots);
+    pen.line(wx, top, wx, top + 7 * rh, dots);
+    for (let i = 0; i <= 7; i++) {
+      const yy = top + i * rh;
+      pen.line(x0, yy, xe, yy, { color: C.line, w: 0.6 });
+      for (const f of [1 / 3, 2 / 3]) pen.rect(wx + ww * f - 0.38, yy - 0.38, 0.76, 0.76, { fill: C.ink });
+    }
+
+    for (let k = 0; k < 7; k++) {
+      const n = monday + k, yy = top + k * rh, cx = x0 + lw / 2;
+      const { d, wd } = Cal.ymd(n), red = dayKind(n) === 'red';
+      const col = red ? C.red : C.ink;
+      pen.text(String(d), cx, yy + 0.275 * rh, { size: 18, color: col, align: 'center', maxW: lw - 0.6 });
+      pen.text(WD_BN[wd], cx, yy + 0.455 * rh, { size: 7.6, font: 'strong', color: col, align: 'center', maxW: lw - 1.0 });
+      pen.text(WD_EN[wd], cx, yy + 0.578 * rh, { size: 5, color: col, align: 'center' });
+      drawMoon(pen, cx, yy + 0.715 * rh, 1.4, Cal.moonOfDay(n), { ink: C.ink, paper, lw: 0.35 });
+      pen.text(Cal.tithiLabel(Cal.tithiOfDay(n).tithi, { short: true }), cx, yy + 0.918 * rh, { size: 5.4, font: 'bengali', color: C.ink, align: 'center', maxW: lw - 0.8 });
+      const b = Cal.bengaliDate(n);
+      pen.text(`${bnNum(b.day)} ${Cal.BN_MONTHS[b.month]}`, xe - 1.2, yy + 3.3, { size: 5.4, font: 'bengali', color: C.light, align: 'right', knockout: paper });
+      const events = Cal.eventsOn(n);
+      if (events.length) {
+        const holiday = events.some((e) => e.kind === 'holiday');
+        pen.text(eventsLabel(events), xe - 1.2, yy + rh - 1.7, { size: 6, font: 'strong', color: holiday ? C.red : C.ink, align: 'right', knockout: paper, maxW: ww * 0.9 });
+      }
+    }
+
+    // today's words (attribution continues on the right page)
+    const weekEvents = [0, 1, 2, 3, 4, 5, 6].flatMap((k) => Cal.eventsOn(monday + k));
+    const q = Quotes.quoteFor(monday + 2, weekEvents);
+    const qy = top + 7 * rh + 6.0;
+    q.t.slice(0, 4).forEach((t, i) => pen.text(t, x0, qy + i * 4.4, { size: 8.4, font: 'bengali', color: C.ink, maxW: xe - x0 }));
+    ctx.quote = q;
+    ctx.quoteBottom = qy + 4 * 4.4;
+  }
+
+  function drawWeeksRight(pen, monday, ctx) {
+    const g = WK.g, C = WK.colors, x0 = WK.rx, top = WK.top, rows = 7 * WK.rowCells;
+    const paper = ctx.tint ? C.tint : C.paper;
+    if (ctx.tint) pen.rect(0, 0, HALF, SHEET_H, { fill: paper });
+    const xe = x0 + WK.rightCells * g, ye = top + rows * g;
+    grid(pen, x0, top, WK.rightCells, rows, g, { color: C.grid, w: 0.46, dot: g / 6 });
+    pen.line(x0 + 6 * g, top, x0 + 6 * g, ye, { color: C.line, w: 0.6 });
+    const thu = weekMonth(monday);
+    // month index tab
+    const ty = top + 2 * g + (thu.m - 1) * 2.5 * g, tx = xe - 0.8 * g;
+    pen.rect(tx, ty, HALF - tx + 3, 2.5 * g, { fill: C.tab });
+    pen.text(String(thu.m), (tx + HALF - 1) / 2, ty + 1.25 * g, { size: 8.6, color: '#FFFFFF', align: 'center', valign: 'middle' });
+    // attribution and month calendar under the grid
+    attribution(pen, ctx.quote, x0, ctx.quoteBottom || ye + 23, { size: 8.4, color: C.ink });
+    miniCal(pen, {
+      x: xe - 1.8 - 6 * 3.7, y: ye + 5.0, colW: 3.7, rowH: 3.7, size: 5.6, headSize: 5.8, year: thu.y, month: thu.m,
+      circle: [0, 1, 2, 3, 4, 5, 6].map((k) => monday + k), pillH: 3.1, pillLW: 0.45,
+      colors: { text: C.ink, head: C.ink, sat: C.sat, sun: C.sun, holiday: C.sun, pill: C.ink },
+    });
+  }
+
+
+  // ---- 4. Yearly (Hobonichi Weeks year-at-a-glance) -------------------------
+  const YR = {
+    colors: { ink: '#3F362F', text: '#4F463F', red: '#C9432E', sat: '#8F877E', rule: '#5A5149', line: '#A39B8C', light: '#8C847A', pill: '#4B4038', paper: '#FFFFFF', tint: '#F3EEE3' },
+  };
+  const DOW_EN1 = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+  function yearMonth(pen, x, y, w, year, month, o) {
+    const C = YR.colors, colW = w / 7, cx = (i) => x + colW * (i + 0.5);
+    if (o.big) {
+      pen.text(String(month), x + w / 2, y + o.numY, { size: o.numSize, color: C.ink, align: 'center' });
+      const name = MONTH_EN[month - 1], bn = bengaliMonthsOf(year, month), gap = 1.5;
+      const w1 = pen.measure(name, o.nameSize), w2 = pen.measure(bn, o.nameSize * 1.05, 'bengali');
+      const sx = x + w / 2 - (w1 + gap + w2) / 2;
+      pen.text(name, sx, y + o.nameY, { size: o.nameSize, color: C.ink });
+      pen.text(bn, sx + w1 + gap, y + o.nameY, { size: o.nameSize * 1.05, font: 'bengali', color: C.light });
+    } else {
+      pen.text(MON_EN[month - 1], x + w / 2, y + o.nameY, { size: o.nameSize, color: C.ink, align: 'center' });
+    }
+    DOW_EN1.forEach((l, i) => pen.text(l, cx(i), y + o.headY, { size: o.headSize, color: i === 6 ? C.red : i === 5 ? C.sat : C.ink, align: 'center' }));
+    pen.line(x, y + o.ruleY, x + w, y + o.ruleY, { color: C.rule, w: 0.4 });
+    const first = Cal.dn(year, month, 1), offset = (Cal.ymd(first).wd + 6) % 7, len = Cal.daysInMonth(year, month);
+    for (let d = 1; d <= len; d++) {
+      const n = first + d - 1, k = offset + d - 1, wd = Cal.ymd(n).wd;
+      const color = wd === 0 || Cal.isHoliday(n) ? C.red : wd === 6 ? C.sat : C.text;
+      pen.text(String(d), cx(k % 7), y + o.dateY + Math.floor(k / 7) * o.rowH, { size: o.dateSize, color, align: 'center' });
+    }
+  }
+
+  function yearHeader(pen, x, y, w, year, label, big) {
+    const C = YR.colors, size = big ? 22 : 15.5;
+    const yw = pen.text(String(year), x, y, { size, color: C.ink });
+    pen.text(`${bnNum(year - 594)}–${bnNum(year - 593)} বঙ্গাব্দ`, x + yw + 2.6, y, { size: big ? 7.4 : 6.4, font: 'bengali', color: C.light });
+    const ts = big ? 7.4 : 6.4, ph = big ? 5.2 : 4.4, pw = pen.measure(label, ts) + 4.4;
+    const capMid = y - (size / MM) * REF.digit / 2;
+    pen.pill(x + w - pw, capMid - ph / 2, pw, ph, { stroke: C.pill, lw: 0.55 });
+    pen.text(label, x + w - pw / 2, capMid, { size: ts, color: C.pill, align: 'center', valign: 'middle' });
+  }
+
+  function drawYearlyLeft(pen, year, ctx) {
+    const C = YR.colors, x0 = 10, x1 = HALF - 7, w = x1 - x0;
+    if (ctx.tint) pen.rect(0, 0, HALF, SHEET_H, { fill: C.tint });
+    yearHeader(pen, x0, 15.5, w, year, 'This Year', true);
+    const gap = 8, bw = (w - 2 * gap) / 3, top = 20.5, pitch = 33.6;
+    const o = { big: true, numY: 4.6, numSize: 10.5, nameY: 8.4, nameSize: 5.8, headY: 12.3, headSize: 5.2, ruleY: 13.5, dateY: 17.0, rowH: 3.2, dateSize: 6.2 };
+    for (let i = 0; i < 12; i++) yearMonth(pen, x0 + (i % 3) * (bw + gap), top + Math.floor(i / 3) * pitch, bw, year, i + 1, o);
+    const iy = top + 4 * pitch + 6.5;
+    pen.text(`${year} Important Dates`, x0, iy, { size: 9.4, color: C.ink });
+    pen.text('Write your important events and national holidays here.', x0, iy + 4.6, { size: 5.6, color: C.text });
+    const lw = (w - 10) / 2;
+    for (let k = 0; k < 6; k++) {
+      const ly = iy + 11.5 + k * 5.6;
+      pen.line(x0, ly, x0 + lw, ly, { color: C.line, w: 0.4 });
+      pen.line(x0 + lw + 10, ly, x1, ly, { color: C.line, w: 0.4 });
+    }
+  }
+
+  function drawYearlyRight(pen, year, ctx) {
+    const C = YR.colors, bw = 36, gap = 6.5, w = 3 * bw + 2 * gap, x0 = 7 + (HALF - 17 - w) / 2;
+    if (ctx.tint) pen.rect(0, 0, HALF, SHEET_H, { fill: C.tint });
+    const o = { big: false, nameY: 2.8, nameSize: 5.2, headY: 5.7, headSize: 4.3, ruleY: 6.6, dateY: 9.3, rowH: 2.42, dateSize: 4.6 };
+    for (const [y, label, top] of [[year - 1, 'Last Year', 13], [year + 1, 'Next Year', 111]]) {
+      yearHeader(pen, x0, top, w, y, label, false);
+      for (let i = 0; i < 12; i++) yearMonth(pen, x0 + (i % 3) * (bw + gap), top + 4 + Math.floor(i / 3) * 21.9, bw, y, i + 1, o);
+    }
+  }
+
+  // ---- documents -------------------------------------------------------------
+  // Reference heights the layout was drawn with (Berkeley Mono digits, Shurjo Mistu headline).
+  const REF = { digit: 0.69, matra: 0.605 };
+  const metricsCache = new WeakMap();
+  function fontInfo(bytes) {
+    if (metricsCache.has(bytes)) return metricsCache.get(bytes);
+    const magic = String.fromCharCode(bytes[0], bytes[1], bytes[2], bytes[3]);
+    if (magic === 'ttcf') throw new Error('Font collections (.ttc) are not supported; pick a single .ttf or .otf font.');
+    const f = global.fontkit.create(bytes);
+    const upm = f.unitsPerEm;
+    const top = (cp) => { const g = f.glyphForCodePoint(cp); return g && g.id && g.bbox.maxY > 0 ? g.bbox.maxY / upm : 0; };
+    const info = { digit: top(0x30) || (f.capHeight || 0.7 * upm) / upm, matra: top(0x0995), hasBengali: !!top(0x0995), cff: magic === 'OTTO' };
+    metricsCache.set(bytes, info);
+    return info;
+  }
+
+  async function newDoc(fontBytes, title) {
+    const doc = await L.PDFDocument.create();
+    doc.registerFontkit(global.fontkit);
+    const fonts = { cover: {}, scale: {} };
+    const embedded = new Map();
+    for (const key of ['latin', 'numerals', 'bengali', 'strong']) {
+      const bytes = fontBytes[key] || (key === 'numerals' ? fontBytes.latin : fontBytes.bengali);
+      const info = fontInfo(bytes);
+      // fontkit's subsetter is only reliable for TrueType outlines
+      if (!embedded.has(bytes)) embedded.set(bytes, await doc.embedFont(bytes, { subset: !info.cff }));
+      fonts[key] = embedded.get(bytes);
+      fonts.cover[key] = new Set(fonts[key].getCharacterSet());
+      fonts.scale[key] = key === 'latin' || key === 'numerals' ? REF.digit / info.digit : REF.matra / (info.matra || info.digit * 0.88);
+    }
+    doc.setTitle(title);
+    doc.setAuthor('Hobonichi-style planner');
+    doc.setCreator('hobonichi-ripoff · index.html');
+    doc.setProducer('pdf-lib');
+    return { doc, fonts };
+  }
+  const addSheet = (doc) => doc.addPage([SHEET_W * MM, SHEET_H * MM]);
+  function foldMarks(page, fonts) {
+    const pen = new Pen(page, fonts);
+    pen.line(HALF, 0, HALF, 3, { color: '#C8C8C8', w: 0.3 });
+    pen.line(HALF, SHEET_H - 3, HALF, SHEET_H, { color: '#C8C8C8', w: 0.3 });
+  }
+  const halves = (page, fonts, s = 1, h = SHEET_H) => {
+    const oy = (SHEET_H - h * s) / 2;
+    return [new Pen(page, fonts, { ox: 0, oy, s }), new Pen(page, fonts, { ox: HALF, oy, s })];
+  };
+
+  function weekTitle(monday) {
+    const a = Cal.ymd(monday), b = Cal.ymd(monday + 6), wk = Cal.isoWeek(monday);
+    return `Week ${wk.week}, ${wk.year} · ${a.d} ${MON_EN[a.m - 1]} – ${b.d} ${MON_EN[b.m - 1]} ${b.y}`;
+  }
+
+  async function buildDaily(monday, fontBytes, opts = {}) {
+    const { doc, fonts } = await newDoc(fontBytes, `A6 Daily — ${weekTitle(monday)}`);
+    const s = HALF / DAILY.W;
+    for (let k = 0; k < 4; k++) {
+      const page = addSheet(doc);
+      const [L1, R1] = halves(page, fonts, s, DAILY.H);
+      const left = monday + 2 * k, right = left + 1;
+      const spread = k < 3 ? [left, right] : [left];
+      drawDaily(L1, left, 'left', { tint: opts.tint });
+      if (k < 3) drawDaily(R1, right, 'right', { tint: opts.tint, circle: spread });
+      else drawDaily(R1, left, 'right', { tint: opts.tint, circle: spread, notes: true });
+      foldMarks(page, fonts);
+    }
+    return doc.save();
+  }
+  async function buildA5(monday, fontBytes, opts = {}) {
+    const { doc, fonts } = await newDoc(fontBytes, `A5 Weekly — ${weekTitle(monday)}`);
+    const page = addSheet(doc);
+    const [L1, R1] = halves(page, fonts);
+    drawA5Left(L1, monday, { tint: opts.tint });
+    drawA5Right(R1, monday, { tint: opts.tint });
+    foldMarks(page, fonts);
+    return doc.save();
+  }
+  async function buildWeeks(monday, fontBytes, opts = {}) {
+    const { doc, fonts } = await newDoc(fontBytes, `Weeks — ${weekTitle(monday)}`);
+    const page = addSheet(doc);
+    const [L1, R1] = halves(page, fonts);
+    const ctx = { tint: opts.tint };
+    drawWeeksLeft(L1, monday, ctx);
+    drawWeeksRight(R1, monday, ctx);
+    foldMarks(page, fonts);
+    return doc.save();
+  }
+
+  async function buildYearly(year, fontBytes, opts = {}) {
+    const { doc, fonts } = await newDoc(fontBytes, `Yearly — ${year}`);
+    const page = addSheet(doc);
+    const [L1, R1] = halves(page, fonts);
+    drawYearlyLeft(L1, year, { tint: opts.tint });
+    drawYearlyRight(R1, year, { tint: opts.tint });
+    foldMarks(page, fonts);
+    return doc.save();
+  }
+
+  global.Planner = { buildDaily, buildA5, buildWeeks, buildYearly, weekTitle, fontInfo, bnNum, WD_BN, MON_EN };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script>
+/* ==========================================================================
+   App: pick a date, build the three PDFs for that week, preview, download.
+   Font names come from font.css; the font files themselves come from the
+   browser (installed fonts), font.css @font-face urls, or picked files.
+   ========================================================================== */
+(function () {
+  'use strict';
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+
+  const KINDS = [
+    { key: 'daily', build: (st, f, o) => window.Planner.buildDaily(st.monday, f, o), id: (st) => weekTag(st.monday), name: (st) => `A6-daily_${weekTag(st.monday)}.pdf` },
+    { key: 'a5', build: (st, f, o) => window.Planner.buildA5(st.monday, f, o), id: (st) => weekTag(st.monday), name: (st) => `A5-weekly_${weekTag(st.monday)}.pdf` },
+    { key: 'weeks', build: (st, f, o) => window.Planner.buildWeeks(st.monday, f, o), id: (st) => weekTag(st.monday), name: (st) => `Weeks_${weekTag(st.monday)}.pdf` },
+    { key: 'yearly', build: (st, f, o) => window.Planner.buildYearly(Cal.ymd(st.day).y, f, o), id: (st) => String(Cal.ymd(st.day).y), name: (st) => `Yearly_${Cal.ymd(st.day).y}.pdf` },
+  ];
+  const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const state = { day: null, monday: null, token: 0, results: {}, built: {}, fonts: null, timer: null };
+
+  // ---- fonts ----------------------------------------------------------------
+  // font.css maps each role to a file in ./fonts, url("fonts/X.ttf"), or to an
+  // installed family name. Files come from fonts/fonts.js (made by
+  // fonts/bundle.sh) or, when the page is served over http, straight from disk.
+  const ROLES = [
+    { key: 'latin', css: '--font-latin', what: 'English letters', styles: ['Regular', 'Book', 'Roman', 'Normal', 'Text', 'Medium'] },
+    { key: 'numerals', css: '--font-numerals', what: 'digits', optional: 'latin', styles: ['Regular', 'Book', 'Roman', 'Normal', 'Text', 'Medium'] },
+    { key: 'bengali', css: '--font-bengali', what: 'Bengali', styles: ['Regular', 'Book', 'Normal', 'Roman', 'Text', 'Medium'] },
+    { key: 'strong', css: '--font-bengali-strong', what: 'Bengali (strong)', optional: 'bengali', styles: ['Medium', 'SemiBold', 'Semibold', 'DemiBold', 'Bold', 'Regular'] },
+  ];
+  const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9\u0980-\u09ff]+/g, '');
+  const baseName = (path) => decodeURIComponent(String(path).split(/[\\/]/).pop());
+
+  function readConfig() {
+    const cs = getComputedStyle(document.documentElement);
+    return ROLES.map((r) => {
+      const raw = cs.getPropertyValue(r.css).trim();
+      const url = /url\(\s*(['"]?)(.+?)\1\s*\)/.exec(raw);
+      if (url) return { ...r, file: url[2], label: baseName(url[2]) };
+      const name = raw.split(',')[0].trim().replace(/^(['"])(.*)\1$/, '$2').trim();
+      return { ...r, name, label: name };
+    }).filter((r) => r.file || r.name);
+  }
+  const cacheKey = (r) => `${r.key}:${norm(r.name)}`;
+
+  function pickFace(faces, role) {
+    if (role.file) {
+      const want = baseName(role.file).toLowerCase();
+      return faces.find((f) => f.fileName && f.fileName.toLowerCase() === want) || null;
+    }
+    const n = norm(role.name);
+    const exact = faces.find((f) => norm(f.fullName) === n || norm(f.postscriptName) === n);
+    if (exact) return exact;
+    const family = faces.filter((f) => norm(f.family) === n);
+    for (const st of role.styles) {
+      const hit = family.find((f) => norm(f.style) === norm(st));
+      if (hit) return hit;
+    }
+    return family.find((f) => !/italic|oblique/i.test(f.style)) || null;
+  }
+
+  // Bytes of a font file listed in font.css: the bundle first, then the network.
+  // One copy per file, so a font used for two roles is embedded once.
+  const decoded = new Map();
+  async function fromFile(role) {
+    const files = window.PLANNER_FONT_FILES || {};
+    const want = baseName(role.file).toLowerCase();
+    const key = Object.keys(files).find((k) => k.toLowerCase() === want);
+    if (key) {
+      if (!decoded.has(key)) {
+        const bin = atob(files[key]);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        decoded.set(key, bytes);
+      }
+      return { bytes: decoded.get(key), label: key, source: 'bundle' };
+    }
+    try {
+      const res = await fetch(new URL(role.file, location.href));
+      if (res.ok) return { bytes: new Uint8Array(await res.arrayBuffer()), label: role.label, source: 'file' };
+    } catch { /* file:// pages can't fetch */ }
+    return null;
+  }
+
+  // Tiny IndexedDB cache for installed fonts, so they are read only once.
+  const store = {
+    db: null,
+    async open() {
+      if (this.db || !window.indexedDB) return this.db;
+      this.db = await new Promise((res) => {
+        try {
+          const req = indexedDB.open('hobonichi-planner', 1);
+          req.onupgradeneeded = () => req.result.createObjectStore('fonts');
+          req.onsuccess = () => res(req.result);
+          req.onerror = () => res(null);
+        } catch { res(null); }
+      });
+      return this.db;
+    },
+    async tx(mode, fn) {
+      const db = await this.open();
+      if (!db) return null;
+      return new Promise((res) => {
+        try {
+          const t = db.transaction('fonts', mode), req = fn(t.objectStore('fonts'));
+          req.onsuccess = () => res(req.result ?? null);
+          req.onerror = () => res(null);
+        } catch { res(null); }
+      });
+    },
+    get(key) { return this.tx('readonly', (s) => s.get(key)); },
+    put(key, value) { return this.tx('readwrite', (s) => s.put(value, key)); },
+    clear() { return this.tx('readwrite', (s) => s.clear()); },
+  };
+
+  async function localFontPermission() {
+    if (!('queryLocalFonts' in window)) return 'unsupported';
+    try { return (await navigator.permissions.query({ name: 'local-fonts' })).state; } catch { return 'prompt'; }
+  }
+
+  function describeFile(bytes, fileName) {
+    const f = window.fontkit.create(bytes);
+    return {
+      family: f.getName('preferredFamily') || f.familyName,
+      style: f.getName('preferredSubfamily') || f.subfamilyName,
+      fullName: f.fullName, postscriptName: f.postscriptName, fileName, bytes,
+    };
+  }
+
+  // Resolve every role to font bytes. `interactive` may trigger the browser's
+  // font permission prompt (needs a click); `files` are user-picked font files.
+  async function resolveFonts({ interactive = false, files = null } = {}) {
+    const roles = readConfig();
+    const found = {};
+    const missing = () => roles.filter((r) => !found[r.key]);
+    const save = (r, entry, cache) => {
+      found[r.key] = entry;
+      if (cache && r.name) store.put(cacheKey(r), { ...entry, bytes: entry.bytes.buffer.slice(0) });
+    };
+
+    for (const r of roles.filter((x) => x.file)) {
+      const entry = await fromFile(r);
+      if (entry) save(r, entry, false);
+    }
+    for (const r of missing().filter((x) => x.name)) {
+      const hit = await store.get(cacheKey(r));
+      if (hit && hit.bytes) found[r.key] = { ...hit, bytes: new Uint8Array(hit.bytes) };
+    }
+    if (files && files.length) {
+      const faces = [];
+      for (const file of files) {
+        try { faces.push(describeFile(new Uint8Array(await file.arrayBuffer()), file.name)); } catch (err) { console.warn('Not a font:', file.name, err); }
+      }
+      for (const r of missing()) {
+        const face = pickFace(faces, r);
+        if (face) save(r, { bytes: face.bytes, label: face.fullName || face.fileName, source: 'picked' }, true);
+      }
+    }
+    let permission = await localFontPermission();
+    const wantInstalled = missing().filter((r) => r.name);
+    if (wantInstalled.length && permission !== 'unsupported' && (permission === 'granted' || interactive)) {
+      try {
+        const faces = await window.queryLocalFonts();
+        // Chrome resolves with an empty list (instead of rejecting) when access isn't granted.
+        if (!faces.length) throw Object.assign(new Error('No access to installed fonts'), { name: 'SecurityError' });
+        permission = 'granted';
+        for (const r of wantInstalled) {
+          const face = pickFace(faces, r);
+          if (face) save(r, { bytes: new Uint8Array(await (await face.blob()).arrayBuffer()), label: face.fullName, source: 'installed' }, true);
+        }
+      } catch (err) {
+        console.warn(err);
+        if (err && err.name === 'NotAllowedError') permission = 'denied';
+        else permission = interactive ? 'blocked' : 'prompt';
+      }
+    }
+
+    const stillMissing = missing().filter((r) => !r.optional);
+    if (stillMissing.length) return { ok: false, missing: stillMissing, permission };
+    for (const r of ROLES) if (!found[r.key] && r.optional) found[r.key] = found[r.optional];
+    for (const key of ['latin', 'numerals', 'bengali', 'strong']) {
+      try { window.Planner.fontInfo(found[key].bytes); } catch (err) { return { ok: false, error: `${found[key].label}: ${err.message}` }; }
+    }
+    if (!window.Planner.fontInfo(found.bengali.bytes).hasBengali) {
+      return { ok: false, error: `"${found.bengali.label}" has no Bengali letters. Point --font-bengali in font.css at a Bengali font.` };
+    }
+    const fonts = {};
+    for (const key of ['latin', 'numerals', 'bengali', 'strong']) fonts[key] = found[key].bytes;
+    return { ok: true, fonts, labels: found };
+  }
+
+  // Same fonts for the page itself: digits from the numerals font, letters from
+  // the Latin font, Bengali from the Bengali fonts.
+  let pageFaces = [];
+  function useFontsInPage(fonts) {
+    for (const f of pageFaces) document.fonts.delete(f);
+    pageFaces = [
+      new FontFace('Planner Numerals', fonts.numerals, { unicodeRange: 'U+0030-0039' }),
+      new FontFace('Planner Latin', fonts.latin),
+      new FontFace('Planner Bengali', fonts.bengali, { weight: '400' }),
+      new FontFace('Planner Bengali', fonts.strong, { weight: '500' }),
+    ];
+    for (const f of pageFaces) { document.fonts.add(f); f.load().catch(() => {}); }
+  }
+
+  function showFontPanel(result) {
+    const panel = $('#fonts-panel');
+    const msg = $('#fonts-message');
+    const allow = $('#fonts-allow');
+    if (result.ok) { panel.hidden = true; return; }
+    panel.hidden = false;
+    allow.hidden = true;
+    if (result.error) { msg.textContent = result.error; return; }
+    const filesMissing = result.missing.filter((r) => r.file);
+    if (filesMissing.length) {
+      const list = filesMissing.map((r) => r.file).join(', ');
+      msg.textContent = `Couldn't read ${list}. Put the file in the fonts folder, run "sh fonts/bundle.sh" in the project folder, then reload. Or choose the file below.`;
+      return;
+    }
+    const names = result.missing.map((r) => `"${r.name}"`).join(', ');
+    if (result.permission === 'prompt') {
+      msg.textContent = `font.css asks for installed fonts (${names}). Let the browser read them once, or choose the font files.`;
+      allow.hidden = false;
+    } else if (result.permission === 'unsupported') {
+      msg.textContent = `This browser can't read installed fonts. Choose the font files for ${names}, or copy them into the fonts folder and point font.css at them.`;
+    } else if (result.permission === 'denied' || result.permission === 'blocked') {
+      msg.textContent = `The browser didn't share installed fonts with this page. Choose the font files for ${names}, or copy them into the fonts folder and point font.css at them.`;
+    } else {
+      msg.textContent = `Couldn't find ${names} among the installed fonts. Check the names in font.css, or choose the font files.`;
+    }
+  }
+
+  async function loadFonts(opts) {
+    const result = await resolveFonts(opts);
+    showFontPanel(result);
+    const used = readConfig().map((r) => `${r.what}: ${r.label}`).join(' · ');
+    $('#fonts-in-use').textContent = `${used} (edit font.css to change)`;
+    if (!result.ok) {
+      for (const k of KINDS) setBusy(k.key, !state.results[k.key], 'Waiting for fonts', 'Waiting for fonts');
+      return false;
+    }
+    useFontsInPage(result.fonts);
+    state.fonts = result.fonts;
+    state.built = {};
+    state.monday = null;
+    setDate(dayOf($('#date').value) ?? todayN(), { push: false });
+    return true;
+  }
+
+  // ---- dates ---------------------------------------------------------------
+  const pad = (v) => String(v).padStart(2, '0');
+  const isoOf = (n) => { const t = Cal.ymd(n); return `${t.y}-${pad(t.m)}-${pad(t.d)}`; };
+  const dayOf = (iso) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); return m ? Cal.dn(+m[1], +m[2], +m[3]) : null; };
+  const todayN = () => { const d = new Date(); return Cal.dn(d.getFullYear(), d.getMonth() + 1, d.getDate()); };
+  const weekTag = (monday) => { const w = Cal.isoWeek(monday); return `${w.year}-W${pad(w.week)}`; };
+
+  function describeWeek(monday) {
+    const a = Cal.ymd(monday), b = Cal.ymd(monday + 6), w = Cal.isoWeek(monday);
+    const range = a.m === b.m
+      ? `Mon ${a.d} to Sun ${b.d} ${MON[b.m - 1]} ${b.y}`
+      : `Mon ${a.d} ${MON[a.m - 1]}${a.y !== b.y ? ` ${a.y}` : ''} to Sun ${b.d} ${MON[b.m - 1]} ${b.y}`;
+    const ba = Cal.bengaliDate(monday), bb = Cal.bengaliDate(monday + 6), bn = Planner.bnNum;
+    const bengali = ba.month === bb.month
+      ? `${bn(ba.day)}–${bn(bb.day)} ${Cal.BN_MONTHS[bb.month]} ${bn(bb.year)}`
+      : `${bn(ba.day)} ${Cal.BN_MONTHS[ba.month]}${ba.year !== bb.year ? ` ${bn(ba.year)}` : ''} – ${bn(bb.day)} ${Cal.BN_MONTHS[bb.month]} ${bn(bb.year)}`;
+    $('#week-title').textContent = `Week ${w.week} · ${range}`;
+    $('#week-bengali').textContent = bengali;
+
+    const list = $('#week-events');
+    list.textContent = '';
+    for (let k = 0; k < 7; k++) {
+      const n = monday + k, t = Cal.ymd(n);
+      for (const e of Cal.eventsOn(n)) {
+        const li = document.createElement('li');
+        li.className = e.kind;
+        const d = document.createElement('span');
+        d.textContent = `${DOW[t.wd]} ${t.d}`;
+        const name = document.createElement('span');
+        name.className = 'bn';
+        name.textContent = e.name;
+        li.append(d, ' ', name);
+        list.appendChild(li);
+      }
+    }
+    list.hidden = !list.children.length;
+  }
+
+  // ---- building & previews -------------------------------------------------
+  function setBusy(key, busy, label, veil = 'Building…') {
+    const card = $(`.card[data-kind="${key}"]`);
+    card.classList.toggle('busy', busy);
+    $('.veil', card).textContent = veil;
+    if (label != null) $('.status', card).textContent = label;
+  }
+  const kb = (bytes) => (bytes < 1048576 ? `${Math.round(bytes / 1024)} KB` : `${(bytes / 1048576).toFixed(1)} MB`);
+  const nextFrame = () => new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
+
+  async function generate() {
+    const token = ++state.token;
+    const snap = { day: state.day, monday: state.monday };
+    describeWeek(snap.monday);
+    if (!state.fonts) return;
+    const tint = $('#tint').checked;
+    const todo = KINDS.filter((k) => state.built[k.key] !== `${k.id(snap)}|${tint}`);
+    for (const k of todo) setBusy(k.key, true, 'Building…');
+    $('#download-selected').disabled = true;
+    for (const k of todo) {
+      await nextFrame();
+      if (token !== state.token) return;
+      let bytes;
+      try {
+        bytes = await k.build(snap, state.fonts, { tint });
+      } catch (err) {
+        console.error(err);
+        setBusy(k.key, false, `Failed: ${err.message}`);
+        continue;
+      }
+      if (token !== state.token) return;
+      const old = state.results[k.key];
+      const blob = new Blob([bytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      state.results[k.key] = { url, name: k.name(snap) };
+      state.built[k.key] = `${k.id(snap)}|${tint}`;
+      $(`.card[data-kind="${k.key}"] iframe`).src = `${url}#view=FitH&navpanes=0`;
+      setBusy(k.key, false, kb(blob.size));
+      if (old) setTimeout(() => URL.revokeObjectURL(old.url), 5000);
+    }
+    updateSelection();
+  }
+  function schedule() {
+    clearTimeout(state.timer);
+    state.timer = setTimeout(generate, 120);
+  }
+
+  function setDate(n, { push = true } = {}) {
+    if (n == null || Number.isNaN(n)) return;
+    $('#date').value = isoOf(n);
+    if (push) history.replaceState(null, '', `#${isoOf(n)}`);
+    const monday = Cal.mondayOf(n);
+    const sameWeek = monday === state.monday, sameYear = state.day != null && Cal.ymd(state.day).y === Cal.ymd(n).y;
+    state.day = n;
+    if (sameWeek && sameYear) return;
+    state.monday = monday;
+    schedule();
+  }
+
+  // ---- downloads -----------------------------------------------------------
+  function download(key) {
+    const r = state.results[key];
+    if (!r) return;
+    const a = document.createElement('a');
+    a.href = r.url;
+    a.download = r.name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+  const selectedKinds = () => KINDS.map((k) => k.key).filter((key) => $(`.card[data-kind="${key}"] .pick`).checked);
+  function updateSelection() {
+    const keys = selectedKinds();
+    const btn = $('#download-selected');
+    btn.disabled = !keys.length || keys.some((k) => !state.results[k]);
+    btn.textContent = keys.length === KINDS.length ? `Download all ${KINDS.length}` : `Download selected (${keys.length})`;
+  }
+  async function downloadSelected() {
+    for (const key of selectedKinds()) { download(key); await new Promise((r) => setTimeout(r, 450)); }
+  }
+
+  // ---- startup -------------------------------------------------------------
+  function fail(msg) {
+    const box = $('#error');
+    box.textContent = msg;
+    box.hidden = false;
+  }
+
+  function init() {
+    if (!window.PDFLib || !window.fontkit || !window.Astronomy || !window.Cal || !window.Planner) {
+      fail('Could not load the libraries in ./lib. Keep index.html next to the lib and fonts folders.');
+      return;
+    }
+    const tint = localStorage.getItem('planner:tint');
+    if (tint != null) $('#tint').checked = tint === '1';
+
+    $('#date').addEventListener('change', (e) => setDate(dayOf(e.target.value)));
+    $('#prev').addEventListener('click', () => setDate(dayOf($('#date').value) - 7));
+    $('#next').addEventListener('click', () => setDate(dayOf($('#date').value) + 7));
+    $('#today').addEventListener('click', () => setDate(todayN()));
+    $('#tint').addEventListener('change', (e) => {
+      localStorage.setItem('planner:tint', e.target.checked ? '1' : '0');
+      schedule();
+    });
+    $('#download-selected').addEventListener('click', downloadSelected);
+    for (const card of $$('.card')) {
+      const key = card.dataset.kind;
+      $('.download', card).addEventListener('click', () => download(key));
+      $('.open', card).addEventListener('click', () => { const r = state.results[key]; if (r) window.open(r.url, '_blank'); });
+      $('.pick', card).addEventListener('change', updateSelection);
+    }
+    $('#fonts-allow').addEventListener('click', () => loadFonts({ interactive: true }));
+    $('#fonts-pick').addEventListener('change', (e) => { loadFonts({ files: [...e.target.files] }); e.target.value = ''; });
+    $('#fonts-reload').addEventListener('click', async () => { await store.clear(); loadFonts({ interactive: true }); });
+    document.addEventListener('keydown', (e) => {
+      if (e.target.closest('input, button, select, textarea, label') || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === 'ArrowLeft') { e.preventDefault(); $('#prev').click(); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); $('#next').click(); }
+    });
+    window.addEventListener('hashchange', () => setDate(dayOf(location.hash.slice(1)), { push: false }));
+
+    setDate(dayOf(location.hash.slice(1)) ?? todayN(), { push: false });
+    loadFonts({});
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+</body>
+</html>

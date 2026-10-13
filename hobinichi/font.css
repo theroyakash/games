@@ -1,0 +1,14 @@
+/* Which font each part of the planner uses, in the PDFs and on this page.
+
+   To switch fonts, point a line at another file in ./fonts and reload
+   index.html. After adding a new file to ./fonts, run `sh fonts/bundle.sh`
+   once so the page can read it.
+
+   A family name such as "Menlo" also works. The page then uses the font
+   installed on this computer (Chrome asks for permission once). */
+:root {
+  --font-latin:          url("fonts/BerkeleyMono-Regular.ttf"); /* English letters */
+  --font-numerals:       url("fonts/SFMono-Regular.ttf");       /* digits 0-9 */
+  --font-bengali:        url("fonts/Li Subha Letterpress Unicode.ttf"); /* Bengali text */
+  --font-bengali-strong: url("fonts/Li Subha Letterpress Unicode.ttf"); /* weekday names, holidays */
+}
